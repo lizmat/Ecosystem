@@ -1,6 +1,8 @@
 use Test;
-use Ecosystem::Archive;
+use Ecosystem;
 
 pass "replace me";
 
 done-testing;
+
+# vim: expandtab shiftwidth=4
