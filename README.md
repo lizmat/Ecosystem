@@ -1,19 +1,17 @@
-[![Actions Status](https://github.com/lizmat/Ecosystem-Archive/workflows/test/badge.svg)](https://github.com/lizmat/Ecosystem-Archive/actions)
+[![Actions Status](https://github.com/lizmat/Ecosystem/workflows/test/badge.svg)](https://github.com/lizmat/Ecosystem/actions)
 
 NAME
 ====
 
-Ecosystem::Archive - Accessing the Raku Ecosystem Archive
+Ecosystem - Accessing a Raku Ecosystem
 
 SYNOPSIS
 ========
 
 ```raku
-use Ecosystem::Archive;
+use Ecosystem;
 
-my $ea = Ecosystem::Archive.new(
-  http-client => default-http-client
-);
+my $ea = Ecosystem.new;  # access the REA
 
 say "Archive has $ea.meta.elems() identities:";
 .say for $ea.meta.keys.sort;
@@ -22,19 +20,19 @@ say "Archive has $ea.meta.elems() identities:";
 DESCRIPTION
 ===========
 
-Ecosystem::Archive provides the basic logic to accessing the Raku Ecosystem Archive, a place where (almost) every distribution ever available in the Raku Ecosystem, can be obtained even after it has been removed (specifically in the case of the old ecosystem master list and the distributions kept on CPAN).
+Ecosystem provides the basic logic to accessing a Raku Ecosystem, defaulting to the Raku Ecosystem Archive, a place where (almost) every distribution ever available in the Raku Ecosystem, can be obtained even after it has been removed (specifically in the case of the old ecosystem master list and the distributions kept on CPAN).
 
 AUTHOR
 ======
 
 Elizabeth Mattijsen <liz@raku.rocks>
 
-Source can be located at: https://github.com/lizmat/Ecosystem-Archive . Comments and Pull Requests are welcome.
+Source can be located at: https://github.com/lizmat/Ecosystem . Comments and Pull Requests are welcome.
 
 COPYRIGHT AND LICENSE
 =====================
 
-Copyright 2021, 2022 Elizabeth Mattijsen
+Copyright 2022 Elizabeth Mattijsen
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 
