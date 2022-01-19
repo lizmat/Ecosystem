@@ -1,0 +1,5 @@
+Revision history for Ecosystem
+
+{{$NEXT}}
+    - First version after rename of Ecosystem::Archive to
+      Ecosystem::Archive::Update

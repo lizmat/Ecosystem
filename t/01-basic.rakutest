@@ -1,0 +1,6 @@
+use Test;
+use Ecosystem::Archive;
+
+pass "replace me";
+
+done-testing;

@@ -1,0 +1,25 @@
+{
+  "auth": "zef:lizmat",
+  "authors": [
+    "Elizabeth Mattijsen"
+  ],
+  "build-depends": [
+  ],
+  "depends": [
+  ],
+  "description": "Accessing a Raku Ecosystem",
+  "license": "Artistic-2.0",
+  "name": "Ecosystem",
+  "perl": "6.d",
+  "provides": {
+    "Ecosystem": "lib/Ecosystem.rakumod"
+  },
+  "resources": [ "fez.json", "rea.json"
+  ],
+  "source-url": "https://github.com/lizmat/Ecosystem.git",
+  "tags": [
+  ],
+  "test-depends": [
+  ],
+  "version": "0.0.1"
+}
