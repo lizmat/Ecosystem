@@ -1,8 +1,9 @@
 use Test;
 use Ecosystem;
 
-pass "replace me";
+plan 1;
 
-done-testing;
+my $ec := Ecosystem.new;
+isa-ok $ec, Ecosystem;
 
 # vim: expandtab shiftwidth=4

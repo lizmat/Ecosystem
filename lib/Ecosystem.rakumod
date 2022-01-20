@@ -305,7 +305,7 @@ L<Map::Match|https://raku.land/zef:lizmat/Map::Match> with the
 string that caused addition of an identity as the key, and a
 sorted list of the identities that either matched the distribution
 name or the description (sorted by short-name, latest version first).
-It is basically the workhorse of the L<find-identities> method.
+It is basically the workhorse of the L<find-identities|#find-identities> method.
 
 =head2 meta
 
