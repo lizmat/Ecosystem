@@ -91,7 +91,7 @@ my $ec = Ecosystem.new;
 .say for $ec.find-identities: / Utils /, :ver<0.0.3+>, :auth<zef:lizmat>;
 ```
 
-The `find-identiities` method returns identities (sorted by short-name, latest version first) that match the given string or regular expression, potentially filtered by `:ver`, `:auth` and/or `:api` value.
+The `find-identities` method returns identities (sorted by short-name, latest version first) that match the given string or regular expression, potentially filtered by `:ver`, `:auth` and/or `:api` value.
 
 identities
 ----------

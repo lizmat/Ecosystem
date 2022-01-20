@@ -1,5 +1,7 @@
 Revision history for Ecosystem
 
 {{$NEXT}}
+
+0.0.1  2022-01-20T21:16:57+01:00
     - First version after rename of Ecosystem::Archive to
       Ecosystem::Archive::Update

@@ -262,7 +262,7 @@ my $ec = Ecosystem.new;
 
 =end code
 
-The C<find-identiities> method returns identities (sorted by short-name,
+The C<find-identities> method returns identities (sorted by short-name,
 latest version first) that match the given string or regular expression,
 potentially filtered by C<:ver>, C<:auth> and/or C<:api> value.
 
