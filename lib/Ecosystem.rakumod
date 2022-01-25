@@ -1,14 +1,18 @@
 use JSON::Fast:ver<0.16>;
-use Identity::Utils:ver<0.0.5>:auth<zef:lizmat>;
+use Identity::Utils:ver<0.0.6>:auth<zef:lizmat>;
 use Rakudo::CORE::META:ver<0.0.3>:auth<zef:lizmat>;
 use Map::Match:ver<0.0.2>:auth<zef:lizmat>;
 
-constant rea-meta-url =
-  "https://raw.githubusercontent.com/Raku/REA/main/META.json";
-constant fez-meta-url =
-  "https://360.zef.pm/";
+constant %meta-url =
+  p6c  => "https://raw.githubusercontent.com/ugexe/Perl6-ecosystems/master/p6c1.json",
+  cpan => "https://raw.githubusercontent.com/ugexe/Perl6-ecosystems/master/cpan1.json",
+  fez  => "https://360.zef.pm/",
+  rea  => "https://raw.githubusercontent.com/Raku/REA/main/META.json",
+;
 
-class Ecosystem:ver<0.0.1>:auth<zef:lizmat> {
+my $store := ($*HOME // $*TMPDIR).add(".zef").add("store");
+
+class Ecosystem:ver<0.0.2>:auth<zef:lizmat> {
     has IO::Path $.IO;
     has Str $.meta-url;
     has Int $.stale-period is built(:bind) = 86400;
@@ -19,21 +23,20 @@ class Ecosystem:ver<0.0.1>:auth<zef:lizmat> {
     has %.matches      is built(False);
     has Lock $!meta-lock;
 
-    method TWEAK(Bool :$fez, Bool :$rea) {
+    method TWEAK(Str:D :content-storage($ecosystem) = 'rea') {
         without $!meta-url {
-            if $fez {
-                $!meta-url := fez-meta-url;
-                $!IO       := %?RESOURCES<fez.json>.IO;
+            if %meta-url{$ecosystem} -> $url {
+                $!meta-url := $url;
+                $!IO := $store.add($ecosystem).add("$ecosystem.json");
             }
-            elsif $rea || !$!IO {
-                $!meta-url := rea-meta-url;
-                $!IO       := %?RESOURCES<rea.json>.IO;
+            else {
+                die "Unknown ecosystem: $ecosystem";
             }
         }
 
-        without $!IO {
-            die "Must specify IO with a specified meta-url";
-        }
+        $!IO
+          ?? mkdir($!IO.parent)
+          !! die "Must specify IO with a specified meta-url";
 
         $!meta-lock := Lock.new;
         self!stale
@@ -42,7 +45,9 @@ class Ecosystem:ver<0.0.1>:auth<zef:lizmat> {
     }
 
     method !stale() {
-        $!meta-url && now - $!IO.modified > $!stale-period
+        $!IO.e
+          ?? $!meta-url && now - $!IO.modified > $!stale-period
+          !! True
     }
 
     method !update-meta-from-URL() {
@@ -68,8 +73,8 @@ class Ecosystem:ver<0.0.1>:auth<zef:lizmat> {
 
     sub sort-identities-of-hash(%hash) {
         for %hash.kv -> $key, @identities {
-            %hash{$key} :=
-              my str @ = sort-identities @identities.unique;
+            %hash{$key} := my str @ =
+              @identities.unique.sort(&version).reverse.sort(&short-name);
         }
     }
 
@@ -107,7 +112,7 @@ class Ecosystem:ver<0.0.1>:auth<zef:lizmat> {
             }
         }
 
-        for %!distro-names, %!use-targets, %!matches -> %hash {
+        for %distro-names, %use-targets, %matches -> %hash {
             sort-identities-of-hash %hash;
         }
 
@@ -175,6 +180,24 @@ ecosystem master list and the distributions kept on CPAN).
 
 =head1 CONSTRUCTOR ARGUMENTS
 
+=head2 content-storage
+
+=begin code :lang<raku>
+
+my $ec = Ecosystem.new(:content-storage<fez>);
+
+=end code
+
+The C<content-storage> named argument is string that indicates where
+the content of an ecosystem is located: it basically is a preset for
+the C<meta-url> and C<IO> arguments.  The following names are
+recognized:
+
+=item p6c  the original content storage / ecosystem
+=item cpan the content storage that uses CPAN
+=item fez  the zef (fez) ecosystem
+=item rea  the Raku Ecosystem Archive (default)
+
 =head2 IO
 
 =begin code :lang<raku>
@@ -212,31 +235,6 @@ my $ec = Ecosystem.new(stale-period => 3600);
 The C<stale-period> named argument specifies the number of seconds
 after which the meta information is considered to be stale and needs
 updating using the C<meta-url>.  Defaults to C<86400>, aka 1 day.
-
-=head2 fez
-
-=begin code :lang<raku>
-
-my $ec = Ecosystem.new(:fez);
-
-=end code
-
-The C<fez> named argument is a boolean that indicates that the
-C<IO> and C<meta-url> named arguments should be set to the values
-needed to access the C<fez> ecosystem.  Defaults to C<False>.
-
-=head2 rea
-
-=begin code :lang<raku>
-
-my $ec = Ecosystem.new(:rea);
-
-=end code
-
-The C<rea> named argument is a boolean that indicates that the
-C<IO> and C<meta-url> named arguments should be set to the values
-needed to access the Raku Ecosystem Archive.  Defaults to C<True>
-if no C<fez> or C<meta-url> argument has been specified.
 
 =head1 METHODS
 
