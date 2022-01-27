@@ -6,10 +6,10 @@
   "build-depends": [
   ],
   "depends": [
-    "JSON::Fast:ver<0.16>",
+    "JSON::Fast::Hyper:ver<0.0.2>:auth<zef:lizmat>",
     "Rakudo::CORE::META:ver<0.0.3>:auth<zef:lizmat>",
     "Identity::Utils:ver<0.0.6>:auth<zef:lizmat>",
-    "Map::Match:ver<0.0.2>:auth<zef:lizmat>"
+    "Map::Match:ver<0.0.3>:auth<zef:lizmat>"
   ],
   "description": "Accessing a Raku Ecosystem",
   "license": "Artistic-2.0",
@@ -19,8 +19,6 @@
     "Ecosystem": "lib/Ecosystem.rakumod"
   },
   "resources": [
-    "fez.json",
-    "rea.json"
   ],
   "source-url": "https://github.com/lizmat/Ecosystem.git",
   "tags": [

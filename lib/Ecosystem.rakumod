@@ -1,7 +1,7 @@
-use JSON::Fast:ver<0.16>;
+use JSON::Fast::Hyper:ver<0.0.2>:auth<zef:lizmat>;
 use Identity::Utils:ver<0.0.6>:auth<zef:lizmat>;
 use Rakudo::CORE::META:ver<0.0.3>:auth<zef:lizmat>;
-use Map::Match:ver<0.0.2>:auth<zef:lizmat>;
+use Map::Match:ver<0.0.3>:auth<zef:lizmat>;
 
 constant %meta-url =
   p6c  => "https://raw.githubusercontent.com/ugexe/Perl6-ecosystems/master/p6c1.json",
@@ -16,21 +16,23 @@ class Ecosystem:ver<0.0.2>:auth<zef:lizmat> {
     has IO::Path $.IO;
     has Str $.meta-url;
     has Int $.stale-period is built(:bind) = 86400;
-    has Str $.meta     is built(False);
-    has %.identities   is built(False);
-    has %.distro-names is built(False);
-    has %.use-targets  is built(False);
-    has %.matches      is built(False);
+    has str $.ecosystem is built(False);
+    has str $.meta      is built(False);
+    has %.identities    is built(False);
+    has %.distro-names  is built(False);
+    has %.use-targets   is built(False);
+    has %.matches       is built(False);
     has Lock $!meta-lock;
 
-    method TWEAK(Str:D :content-storage($ecosystem) = 'rea') {
+    method TWEAK(Str:D :$ecoosystem = 'rea') {
         without $!meta-url {
-            if %meta-url{$ecosystem} -> $url {
+            if %meta-url{$ecoosystem} -> $url {
                 $!meta-url := $url;
-                $!IO := $store.add($ecosystem).add("$ecosystem.json");
+                $!IO       := $store.add($ecoosystem).add("$ecoosystem.json");
+                $!ecosystem = $ecoosystem;
             }
             else {
-                die "Unknown ecosystem: $ecosystem";
+                die "Unknown ecosystem: $ecoosystem";
             }
         }
 
@@ -59,8 +61,8 @@ class Ecosystem:ver<0.0.2>:auth<zef:lizmat> {
     }
 
     sub add-identity(%hash, str $key, str $identity) {
-        with %hash{$key} -> @identities {
-            @identities.push: $identity;
+        if %hash{$key} -> @identities {
+            @identities.push($identity)
         }
         else {
             %hash{$key} := (my str @ = $identity);
@@ -79,10 +81,10 @@ class Ecosystem:ver<0.0.2>:auth<zef:lizmat> {
     }
 
     method !update-meta-from-json($!meta --> Nil) {
-        my @meta := from-json $!meta;
         my %identities;
         my %distro-names;
         my %use-targets;
+        my %descriptions;
         my %matches;
 
         with %Rakudo::CORE::META -> %distribution {
@@ -91,19 +93,18 @@ class Ecosystem:ver<0.0.2>:auth<zef:lizmat> {
 
             %identities{$identity} := %distribution.Map;
             add-identity %distro-names, $name, $identity;
-            add-identity %use-targets, $_, $identity
+            add-identity %use-targets,  $_,    $identity
               for %distribution<provides>.keys;
         }
 
-        for @meta -> %distribution {
+        for from-json($!meta) -> %distribution {
             if %distribution<name> -> $name {
                 my $identity := %distribution<dist>;
                 %identities{$identity} := %distribution;
                 add-identity %distro-names, $name, $identity;
-                add-identity %matches, $name, $identity;
 
                 if %distribution<description> -> $text {
-                    add-identity %matches, $text, $identity;
+                    add-identity %descriptions, $text, $identity;
                 }
                 if %distribution<provides> -> %provides {
                     add-identity %use-targets, $_, $identity
@@ -112,41 +113,112 @@ class Ecosystem:ver<0.0.2>:auth<zef:lizmat> {
             }
         }
 
-        for %distro-names, %use-targets, %matches -> %hash {
-            sort-identities-of-hash %hash;
+        if $!ecosystem ne 'rea' {
+            for %distro-names, %use-targets -> %hash {
+                sort-identities-of-hash %hash;
+            }
         }
 
         %!identities   := %identities.Map;
         %!distro-names := %distro-names.Map;
         %!use-targets  := %use-targets.Map;
-        %!matches      := Map::Match.new: %matches;
-    }
 
-    method find-identities($name, :$ver, :$auth, :$api) {
-
-        my sub filter(@identities) {
-            my $auth-needle := $auth ?? ":auth<$auth>" !! "";
-            my $api-needle  := $api && $api ne '0' ?? ":api<$api>" !! "";
-            my $version;
-            my &comp;
-            if $ver && $ver ne '*' {
-                $version := $ver.Version;
-                &comp = $ver.contains("+" | "*")
-                  ?? &infix:«>»
-                  !! &infix:«==»;
-            }
-
-            @identities.grep: {
-                (!$auth-needle || .contains($auth-needle))
-                  &&
-                (!$api-needle || .contains($api-needle))
-                  && 
-                (!&comp || comp(.&version, $version))
+        for %distro-names, %use-targets, %descriptions -> %hash {
+            for %hash.kv -> str $key, str @additional {
+                if %matches{$key} -> @identities {
+                    @identities.append: @additional
+                }
+                else {
+                    %matches{$key} := (my str @ = @additional);
+                }
             }
         }
+        %!matches := Map::Match.new: %matches;
+    }
 
-        if %!matches{$name}.map(*.Slip).unique -> @identities {
-            sort-identities filter @identities
+    my sub filter(@identities, $ver, $auth, $api, $from) {
+        my $auth-needle := $auth ?? ":auth<$auth>" !! "";
+        my $api-needle  := $api && $api ne '0'
+          ?? ":api<$api>"
+          !! "";
+        my $from-needle := $from && !($from eq 'Perl6' | 'Raku')
+          ?? ":from<$from>"
+          !! "";
+        my $version;
+        my &ver-comp;
+        if $ver && $ver ne '*' {
+            $version := $ver.Version;
+            &ver-comp = $ver.contains("+" | "*")
+              ?? &infix:«>»
+              !! &infix:«==»;
+        }
+
+        @identities.grep: {
+            (!$from-needle || .contains($from-needle))
+              &&
+            (!$api-needle  || .contains($api-needle))
+              && 
+            (!$auth-needle || .contains($auth-needle))
+              &&
+            (!&ver-comp    || ver-comp(.&version, $version))
+        }
+    }
+
+    method find-identities(Any:D $needle, :$ver, :$auth, :$api, :$from, :$all) {
+        if filter
+          %!matches{$needle}.map(*.Slip).unique, $ver, $auth, $api, $from
+        -> @identities {
+            my %seen;
+            sort-identities $all
+              ?? @identities
+              !! @identities.map: { $_ unless %seen{short-name($_)}++ }
+        }
+    }
+
+    method find-distro-names(Any:D $needle, *%_) {
+        my &accepts := $needle ~~ Regex
+          ?? -> $name { $needle.ACCEPTS($name) }
+          !! -> $name { $name.contains($needle, :i, :m) }
+
+        my %seen;
+        self.find-identities($needle, |%_, :all).map: {
+            with %!identities{$_}<name> -> $name {
+                $name if accepts($name) && not %seen{$name}++
+            }
+        }
+    }
+
+    method find-use-targets(Any:D $needle, *%_) {
+        my &accepts := $needle ~~ Regex
+          ?? -> $use-target { $needle.ACCEPTS($use-target) }
+          !! -> $use-target { $use-target.contains($needle, :i, :m) }
+
+        my %seen;
+        self.find-identities($needle, |%_, :all).map: {
+            with %!identities{$_}<provides> -> %provides {
+                %provides.keys.first( -> $use-target {
+                    accepts($use-target) && not %seen{$use-target}++
+                }) // Empty
+            }
+        }
+    }
+
+    method identity-url(str $identity) {
+        %!identities{$identity}<source-url>
+    }
+
+    sub identities2distros(@identities) {
+        my %seen;
+        @identities.map: {
+            if short-name($_) -> $name {
+                $name unless %seen{$name}++
+            }
+        }
+    }
+
+    method distros-of-use-target(str $target) {
+        if %!use-targets{$target} -> @identities {
+            identities2distros(@identities)
         }
     }
 }
@@ -163,10 +235,10 @@ Ecosystem - Accessing a Raku Ecosystem
 
 use Ecosystem;
 
-my $ec = Ecosystem.new;  # access the REA ecosystem
+my $eco = Ecosystem.new;  # access the REA ecosystem
 
-say "Ecosystem has $ec.identities.elems() identities:";
-.say for $ec.identities.keys.sort;
+say "Ecosystem has $eco.identities.elems() identities:";
+.say for $eco.identities.keys.sort;
 
 =end code
 
@@ -178,31 +250,39 @@ distribution ever available in the Raku Ecosystem, can be obtained
 even after it has been removed (specifically in the case of the old
 ecosystem master list and the distributions kept on CPAN).
 
+=head1 COMMAND LINE INTERFACE
+
+The C<ecosystem> script provides a direct way to interrogate the contents
+of a given eco-system.  Please see the usage information of the script
+for further information.
+
 =head1 CONSTRUCTOR ARGUMENTS
 
-=head2 content-storage
+=head2 ecosystem
 
 =begin code :lang<raku>
 
-my $ec = Ecosystem.new(:content-storage<fez>);
+my $eco = Ecosystem.new(:ecosystem<fez>);
 
 =end code
 
-The C<content-storage> named argument is string that indicates where
-the content of an ecosystem is located: it basically is a preset for
-the C<meta-url> and C<IO> arguments.  The following names are
-recognized:
+The C<ecosystem> named argument is string that indicates which ecosystem
+(content-storage) should be used: it basically is a preset for the
+C<meta-url> and C<IO> arguments.  The following names are recognized:
 
 =item p6c  the original content storage / ecosystem
 =item cpan the content storage that uses CPAN
 =item fez  the zef (fez) ecosystem
 =item rea  the Raku Ecosystem Archive (default)
 
+If this argument is not specified, then at least the C<IO> named argument
+must be specified.
+
 =head2 IO
 
 =begin code :lang<raku>
 
-my $ec = Ecosystem.new(IO => "path".IO);
+my $eco = Ecosystem.new(IO => "path".IO);
 
 =end code
 
@@ -214,7 +294,7 @@ to whatever can be determined from the other arguments.
 
 =begin code :lang<raku>
 
-my $ec = Ecosystem.new(meta-url => "https://foo.bar/META.json");
+my $eco = Ecosystem.new(meta-url => "https://foo.bar/META.json");
 
 =end code
 
@@ -228,7 +308,7 @@ arguments B<must> also be specified to store the meta information in.
 
 =begin code :lang<raku>
 
-my $ec = Ecosystem.new(stale-period => 3600);
+my $eco = Ecosystem.new(stale-period => 3600);
 
 =end code
 
@@ -236,81 +316,147 @@ The C<stale-period> named argument specifies the number of seconds
 after which the meta information is considered to be stale and needs
 updating using the C<meta-url>.  Defaults to C<86400>, aka 1 day.
 
-=head1 METHODS
+=head1 INSTANCE METHODS
 
 =head2 distro-names
 
 =begin code :lang<raku>
 
-my $ec = Ecosystem.new;
-say "Found $ec.distro-names.elems() differently named distributions";
+my $eco = Ecosystem.new;
+say "Found $eco.distro-names.elems() differently named distributions";
 
 =end code
 
-The C<distro-names> method returns a C<Map> keyed on distribution
+The C<distro-names> instance method returns a C<Map> keyed on distribution
 name, with a sorted list of the identities that have that distribution
 name (sorted by short-name, latest version first).
+
+=head2 distros-of-use-target
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+.say for $eco.distros-of-use-target($target);
+
+=end code
+
+The C<distro-of-use-target> instance method the names of the distributions
+that provide the given use target.
+
+=head2 ecosystem
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say "The ecosystem is $_" with $eco.ecosystem;
+
+=end code
+
+The C<ecosystem> instance method returns the value (implicitely) specified
+with the C<:ecosystem> named argument.
+
+=head2 find-distro-names
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+.say for $eco.find-distro-names: / JSON /;
+
+=end code
+
+The C<find-distro-names> instance method returns the distribution names
+that match the given string or regular expression, potentially filtered
+by C<:ver>, C<:auth>, C<:api> and/or C<:from> value.
 
 =head2 find-identities
 
 =begin code :lang<raku>
 
-my $ec = Ecosystem.new;
-.say for $ec.find-identities: / Utils /, :ver<0.0.3+>, :auth<zef:lizmat>;
+my $eco = Ecosystem.new;
+.say for $eco.find-identities: / Utils /, :ver<0.0.3+>, :auth<zef:lizmat>;
 
 =end code
 
 The C<find-identities> method returns identities (sorted by short-name,
 latest version first) that match the given string or regular expression,
-potentially filtered by C<:ver>, C<:auth> and/or C<:api> value.
+potentially filtered by C<:ver>, C<:auth>, C<:api> and/or C<:from> value.
+
+The specified string is looked up in the distribution names, the use-targets
+and the descriptions of the distributions.
+
+=head2 find-use-targets
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+.say for $eco.find-use-targets: / JSON /;
+
+=end code
+
+The C<find-use-targets> instance method returns the strings that can be
+used in a C<use> command that match the given string or regular expression,
+potentially filtered by C<:ver>, C<:auth>, C<:api> and/or C<:from> value.
 
 =head2 identities
 
 =begin code :lang<raku>
 
-my $ec = Ecosystem.new;
-my %identities := $ec.identities;
+my $eco = Ecosystem.new;
+my %identities := $eco.identities;
 say "Found %identities.elems() identities";
 
 =end code
 
-The C<identities> method returns a C<Map> keyed on identity string,
+The C<identities> instance method returns a C<Map> keyed on identity string,
+with a C<Map> of the META information of that identity as the value.
+
+=head2 identity-url
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say $eco.identity-url($identity);
+
+=end code
+
+The C<identity-url> instance method returns a C<Map> keyed on identity string,
 with a C<Map> of the META information of that identity as the value.
 
 =head2 IO
 
 =begin code :lang<raku>
 
-my $ec = Ecosystem.new(:IO("foobar.json").IO);
-say $ec.IO;  # "foobar.json".IO
+my $eco = Ecosystem.new(:IO("foobar.json").IO);
+say $eco.IO;  # "foobar.json".IO
 
 =end code
 
-The C<IO> method returns the C<IO::Path> object of the file where the
-local copy of the META data lives.
+The C<IO> instance method returns the C<IO::Path> object of the file where
+the local copy of the META data lives.
 
 =head2 matches
 
 =begin code :lang<raku>
 
-my $ec = Ecosystem.new;
-.say for $ec.matches{ / Utils / };
+my $eco = Ecosystem.new;
+.say for $eco.matches{ / Utils / };
 
 =end code
 
-The C<matches> method returns a
+The C<matches> instance method returns a
 L<Map::Match|https://raku.land/zef:lizmat/Map::Match> with the
 string that caused addition of an identity as the key, and a
 sorted list of the identities that either matched the distribution
 name or the description (sorted by short-name, latest version first).
-It is basically the workhorse of the L<find-identities|#find-identities> method.
+It is basically the workhorse of the L<find-identities|#find-identities>
+method.
 
 =head2 meta
 
 =begin code :lang<raku>
 
-my $ec = Ecosystem.new;
-say $ec.meta;  # ...
+my $eco = Ecosystem.new;
+say $eco.meta;  # ...
 
 =end code
 
@@ -320,8 +466,8 @@ The C<meta> method returns the JSON representation of the META data.
 
 =begin code :lang<raku>
 
-my $ec = Ecosystem.new(:fez);
-say $ec.meta-url;  # https://360.zef.pm/
+my $eco = Ecosystem.new(:ecosystem<fez>);
+say $eco.meta-url;  # https://360.zef.pm/
 
 =end code
 
@@ -332,8 +478,8 @@ META data, if any.
 
 =begin code :lang<raku>
 
-my $ec = Ecosystem.new;
-say $ec.stale-period;  # 86400
+my $eco = Ecosystem.new;
+say $eco.stale-period;  # 86400
 
 =end code
 
@@ -344,8 +490,8 @@ any locally stored META information is considered to be stale.
 
 =begin code :lang<raku>
 
-my $ec = Ecosystem.new;
-say "Found $ec.use-targets.elems() different 'use' targets";
+my $eco = Ecosystem.new;
+say "Found $eco.use-targets.elems() different 'use' targets";
 
 =end code
 

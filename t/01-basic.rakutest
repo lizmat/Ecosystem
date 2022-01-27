@@ -1,25 +1,31 @@
 use Test;
 use Ecosystem;
-use Identity::Utils:ver<0.0.6>:auth<zef:lizmat>;
 
-plan 4;
+plan 7;
 
-my $ec := Ecosystem.new;
-isa-ok $ec, Ecosystem;
+my $eco := Ecosystem.new;
+isa-ok $eco, Ecosystem;
+is $eco.ecosystem, 'rea', 'is the ecosystem name ok';
 
 my $short-name := "eigenstates";
 my $auth       := "zef:lizmat";
-my $found      := $ec.find-identities($short-name, :$auth).head;
+my $found      := $eco.find-identities($short-name, :$auth).head;
 
-my $ver      := ver($found);
+my $ver      := ($found ~~ / <?after ':ver<'> .*? <?before '>'> /).Str;
 my $identity := $short-name ~ ":ver<$ver>:auth<$auth>";
 is $found, $identity, 'is identity ok';
 
-is $ec.identities{$identity}<source-url>,
+is $eco.identity-url($identity),
   "https://raw.githubusercontent.com/raku/REA/main/archive/E/eigenstates/eigenstates:ver\%3C$ver\%3E:auth\%3C$auth\%3E.tar.gz",
-  'is source-url ok?';
+  'is identity-url ok?';
 
-is $ec.use-targets<eigenstates>.head, $identity,
+is $eco.use-targets<eigenstates>.head, $identity,
   'is use-target ok?';
+
+is $eco.identity-url($identity), "https://raw.githubusercontent.com/raku/REA/main/archive/E/eigenstates/eigenstates:ver%3C0.0.9%3E:auth%3Czef:lizmat%3E.tar.gz",
+  'is distro-url ok?';
+
+is-deeply $eco.distros-of-use-target($short-name), ($short-name,),
+  'is distros-of-use-target ok?';
 
 # vim: expandtab shiftwidth=4

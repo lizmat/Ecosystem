@@ -2,6 +2,11 @@ Revision history for Ecosystem
 
 {{$NEXT}}
 
+0.0.2  2022-01-27T21:19:08+01:00
+    - Switch to depend on JSON::Fast::Hyper instead of JSON::Fast
+    - Upped dependency on Map::Match to get case insensitive searches
+    - Added a bunch of new methods, documentation and a CLI
+
 0.0.1  2022-01-20T21:16:57+01:00
     - First version after rename of Ecosystem::Archive to
       Ecosystem::Archive::Update
