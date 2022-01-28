@@ -152,6 +152,26 @@ say "Found %identities.elems() identities";
 
 The `identities` instance method returns a `Map` keyed on identity string, with a `Map` of the META information of that identity as the value.
 
+identity-release-Date
+---------------------
+
+```raku
+my $eco = Ecosystem.new;
+say $eco.identity-release-Date($identity);
+```
+
+The `identity-release-Date` instance method returns the `Date` when the the distribution of the given identity string was released, or `Nil` if either the identity could not be found, or if there is no release date information available.
+
+identity-release-yyyy-mm-dd
+---------------------------
+
+```raku
+my $eco = Ecosystem.new;
+say $eco.identity-release-yyyy-mm-dd($identity);
+```
+
+The `identity-release-yyyy-mm-dd` instance method returns a `Str` in YYYY-MM-DD format of when the the distribution of the given identity string was released, or `Nil` if either the identity could not be found, or if there is no release date information available.
+
 identity-url
 ------------
 
@@ -160,7 +180,7 @@ my $eco = Ecosystem.new;
 say $eco.identity-url($identity);
 ```
 
-The `identity-url` instance method returns a `Map` keyed on identity string, with a `Map` of the META information of that identity as the value.
+The `identity-url` instance method returns the `URL` of the distribution file associated with the given identity string, or `Nil`.
 
 IO
 --
@@ -171,6 +191,16 @@ say $eco.IO;  # "foobar.json".IO
 ```
 
 The `IO` instance method returns the `IO::Path` object of the file where the local copy of the META data lives.
+
+least-recent-release
+--------------------
+
+```raku
+my $eco = Ecosystem.new;
+say $eco.least-recent-release;
+```
+
+The `least-recent-release` instancemethod returns the `Date` of the least recent release in the ecosystem, if any.
 
 matches
 -------
@@ -190,7 +220,7 @@ my $eco = Ecosystem.new;
 say $eco.meta;  # ...
 ```
 
-The `meta` method returns the JSON representation of the META data.
+The `meta` instance method returns the JSON representation of the META data.
 
 meta-url
 --------
@@ -200,7 +230,17 @@ my $eco = Ecosystem.new(:ecosystem<fez>);
 say $eco.meta-url;  # https://360.zef.pm/
 ```
 
-The `meta-url` method returns the URL that is used to fetch the META data, if any.
+The `meta-url` instance method returns the URL that is used to fetch the META data, if any.
+
+most-recent-release
+-------------------
+
+```raku
+my $eco = Ecosystem.new;
+say $eco.most-recent-release;
+```
+
+The `most-recent-release` instance method returns the `Date` of the most recent release in the ecosystem, if any.
 
 stale-period
 ------------
@@ -210,7 +250,17 @@ my $eco = Ecosystem.new;
 say $eco.stale-period;  # 86400
 ```
 
-The `stale-period` method returns the number of seconds after which any locally stored META information is considered to be stale.
+The `stale-period` instance method returns the number of seconds after which any locally stored META information is considered to be stale.
+
+update
+------
+
+```raku
+my $eco = Ecosystem.new;
+$eco.update;
+```
+
+The `update` instance method re-fetches the META information from the `meta-url` and updates it internal state in a thread-safe manner.
 
 use-targets
 -----------
@@ -220,7 +270,7 @@ my $eco = Ecosystem.new;
 say "Found $eco.use-targets.elems() different 'use' targets";
 ```
 
-The `use-targets` method returns a `Map` keyed on 'use' target, with a sorted list of the identities that provide that 'use' target (sorted by short-name, latest version first).
+The `use-targets` instance method returns a `Map` keyed on 'use' target, with a sorted list of the identities that provide that 'use' target (sorted by short-name, latest version first).
 
 AUTHOR
 ======

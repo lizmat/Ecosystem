@@ -2,6 +2,13 @@ Revision history for Ecosystem
 
 {{$NEXT}}
 
+0.0.3  2022-01-28T23:44:37+01:00
+    - Added method 'identity-release-Date'
+    - Added method 'identity-release-yyyy-mm-dd'
+    - Added method 'least-recent-release'
+    - Added method 'most-recent-release'
+    - Added method 'update'
+
 0.0.2  2022-01-27T21:19:08+01:00
     - Switch to depend on JSON::Fast::Hyper instead of JSON::Fast
     - Upped dependency on Map::Match to get case insensitive searches

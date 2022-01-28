@@ -12,7 +12,7 @@ constant %meta-url =
 
 my $store := ($*HOME // $*TMPDIR).add(".zef").add("store");
 
-class Ecosystem:ver<0.0.2>:auth<zef:lizmat> {
+class Ecosystem:ver<0.0.3>:auth<zef:lizmat> {
     has IO::Path $.IO;
     has Str $.meta-url;
     has Int $.stale-period is built(:bind) = 86400;
@@ -22,6 +22,8 @@ class Ecosystem:ver<0.0.2>:auth<zef:lizmat> {
     has %.distro-names  is built(False);
     has %.use-targets   is built(False);
     has %.matches       is built(False);
+    has Date $!least-recent-release;
+    has Date $!most-recent-release;
     has Lock $!meta-lock;
 
     method TWEAK(Str:D :$ecoosystem = 'rea') {
@@ -134,6 +136,8 @@ class Ecosystem:ver<0.0.2>:auth<zef:lizmat> {
             }
         }
         %!matches := Map::Match.new: %matches;
+
+        $!least-recent-release = $!most-recent-release = Nil;
     }
 
     my sub filter(@identities, $ver, $auth, $api, $from) {
@@ -207,6 +211,13 @@ class Ecosystem:ver<0.0.2>:auth<zef:lizmat> {
         %!identities{$identity}<source-url>
     }
 
+    method identity-release-Date(str $identity) {
+        %!identities{$identity}<release-date>.Date
+    }
+    method identity-release-yyyy-mm-dd(str $identity) {
+        %!identities{$identity}<release-date>
+    }
+
     sub identities2distros(@identities) {
         my %seen;
         @identities.map: {
@@ -220,6 +231,35 @@ class Ecosystem:ver<0.0.2>:auth<zef:lizmat> {
         if %!use-targets{$target} -> @identities {
             identities2distros(@identities)
         }
+    }
+
+    method !minmax-release-dates(--> Nil) {
+        $!meta-lock.protect: {
+            my $range := %!identities.values.map( -> %_ {
+                $_ with %_<release-date>
+            }).minmax;
+            $!least-recent-release := $range.min.Date;
+            $!most-recent-release  := $range.max.Date;
+        }
+    }
+
+    method least-recent-release() {
+        $!least-recent-release
+          // self!minmax-release-dates
+          // $!least-recent-release
+
+    }
+
+    method most-recent-release() {
+        $!most-recent-release
+          // self!minmax-release-dates
+          // $!most-recent-release
+    }
+
+    method update() {
+        $!meta-url
+          ?? self!update-meta-from-URL
+          !! self!update-meta-from-json  # assumes it was changed
     }
 }
 
@@ -410,6 +450,34 @@ say "Found %identities.elems() identities";
 The C<identities> instance method returns a C<Map> keyed on identity string,
 with a C<Map> of the META information of that identity as the value.
 
+=head2 identity-release-Date
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say $eco.identity-release-Date($identity);
+
+=end code
+
+The C<identity-release-Date> instance method returns the C<Date> when the
+the distribution of the given identity string was released, or C<Nil> if
+either the identity could not be found, or if there is no release date
+information available.
+
+=head2 identity-release-yyyy-mm-dd
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say $eco.identity-release-yyyy-mm-dd($identity);
+
+=end code
+
+The C<identity-release-yyyy-mm-dd> instance method returns a C<Str> in
+YYYY-MM-DD format of when the the distribution of the given identity string
+was released, or C<Nil> if either the identity could not be found, or if
+there is no release date information available.
+
 =head2 identity-url
 
 =begin code :lang<raku>
@@ -419,8 +487,8 @@ say $eco.identity-url($identity);
 
 =end code
 
-The C<identity-url> instance method returns a C<Map> keyed on identity string,
-with a C<Map> of the META information of that identity as the value.
+The C<identity-url> instance method returns the C<URL> of the distribution
+file associated with the given identity string, or C<Nil>.
 
 =head2 IO
 
@@ -433,6 +501,18 @@ say $eco.IO;  # "foobar.json".IO
 
 The C<IO> instance method returns the C<IO::Path> object of the file where
 the local copy of the META data lives.
+
+=head2 least-recent-release
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say $eco.least-recent-release;
+
+=end code
+
+The C<least-recent-release> instancemethod returns the C<Date> of the
+least recent release in the ecosystem, if any.
 
 =head2 matches
 
@@ -460,7 +540,8 @@ say $eco.meta;  # ...
 
 =end code
 
-The C<meta> method returns the JSON representation of the META data.
+The C<meta> instance method returns the JSON representation of the
+META data.
 
 =head2 meta-url
 
@@ -471,8 +552,20 @@ say $eco.meta-url;  # https://360.zef.pm/
 
 =end code
 
-The C<meta-url> method returns the URL that is used to fetch the
-META data, if any.
+The C<meta-url> instance method returns the URL that is used to
+fetch the META data, if any.
+
+=head2 most-recent-release
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say $eco.most-recent-release;
+
+=end code
+
+The C<most-recent-release> instance method returns the C<Date>
+of the most recent release in the ecosystem, if any.
 
 =head2 stale-period
 
@@ -483,8 +576,22 @@ say $eco.stale-period;  # 86400
 
 =end code
 
-The C<stale-period> method returns the number of seconds after which
-any locally stored META information is considered to be stale.
+The C<stale-period> instance method returns the number of seconds
+after which any locally stored META information is considered to
+be stale.
+
+=head2 update
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+$eco.update;
+
+=end code
+
+The C<update> instance method re-fetches the META information from
+the C<meta-url> and updates it internal state in a thread-safe
+manner.
 
 =head2 use-targets
 
@@ -495,9 +602,9 @@ say "Found $eco.use-targets.elems() different 'use' targets";
 
 =end code
 
-The C<use-targets> method returns a C<Map> keyed on 'use' target,
-with a sorted list of the identities that provide that 'use' target
-(sorted by short-name, latest version first).
+The C<use-targets> instance method returns a C<Map> keyed on 'use'
+target, with a sorted list of the identities that provide that
+'use' target (sorted by short-name, latest version first).
 
 =head1 AUTHOR
 
