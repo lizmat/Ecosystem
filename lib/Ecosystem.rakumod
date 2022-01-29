@@ -12,7 +12,7 @@ constant %meta-url =
 
 my $store := ($*HOME // $*TMPDIR).add(".zef").add("store");
 
-class Ecosystem:ver<0.0.3>:auth<zef:lizmat> {
+class Ecosystem:ver<0.0.4>:auth<zef:lizmat> {
     has IO::Path $.IO;
     has Str $.meta-url;
     has Int $.stale-period is built(:bind) = 86400;
@@ -26,15 +26,15 @@ class Ecosystem:ver<0.0.3>:auth<zef:lizmat> {
     has Date $!most-recent-release;
     has Lock $!meta-lock;
 
-    method TWEAK(Str:D :$ecoosystem = 'rea') {
+    method TWEAK(Str:D :$ecosystem = 'rea') {
         without $!meta-url {
-            if %meta-url{$ecoosystem} -> $url {
+            if %meta-url{$ecosystem} -> $url {
                 $!meta-url := $url;
-                $!IO       := $store.add($ecoosystem).add("$ecoosystem.json");
-                $!ecosystem = $ecoosystem;
+                $!IO       := $store.add($ecosystem).add("$ecosystem.json");
+                $!ecosystem = $ecosystem;
             }
             else {
-                die "Unknown ecosystem: $ecoosystem";
+                die "Unknown ecosystem: $ecosystem";
             }
         }
 
@@ -82,6 +82,90 @@ class Ecosystem:ver<0.0.3>:auth<zef:lizmat> {
         }
     }
 
+    my constant @extensions = <.tar.gz .tgz .zip>;
+    sub no-extension(Str:D $string) {
+        return $string.chop(.chars) if $string.ends-with($_) for @extensions;
+    }
+    sub extension(Str:D $string) {
+        @extensions.first: { $string.ends-with($_) }
+    }
+    sub determine-base($domain) {
+        $domain
+          ?? $domain eq 'raw.githubusercontent.com' | 'github.com'
+            ?? 'github'
+            !! $domain eq 'gitlab.com'
+              ?? 'gitlab'
+              !! Nil
+          !! Nil
+    }
+
+    # Version encoded in path has priority over version in META because
+    # PAUSE would not allow uploads of the same version encoded in the
+    # distribution name, but it *would* allow uploads with a non-matching
+    # version in the META.  Also make sure we skip any "v" in the version
+    # string.
+    method !elide-identity-cpan(str $name, %meta) {
+# http://www.cpan.org/authors/id/Y/YN/YNOTO/Perl6/json-path-0.1.tar.gz
+# git://github.com/Tux/CSV.git
+        if %meta<source-url> -> $URL {
+            my @parts = $URL.split('/');
+            my $auth := %meta<auth> :=
+              'cpan:' ~ @parts[2] ne 'www.cpan.org'
+                ?? @parts[3].uc
+                !! @parts[7];
+
+            # Determine version from filename
+            my $nept := no-extension(@parts.tail);
+            with $nept && $nept.rindex('-') -> $index {
+                my $ver := $nept.substr($index + 1);
+                $ver := $ver.substr(1)
+                  if $ver.starts-with('v');
+
+                # keep version in meta if strange in filename
+                $ver.contains(/ <-[\d \.]> /)
+                  ?? ($ver := %meta<version>)
+                  !! (%meta<version> := $ver);
+
+                %meta<dist> :=
+                  build $name, :$ver, :$auth, :api(%meta<api>)
+            }
+
+            # Assume version in meta is correct
+            elsif %meta<version> -> $ver {
+                %meta<dist> :=
+                  build $name, :$ver, :$auth, :api(%meta<api>)
+            }
+        }
+    }
+
+    # Heuristics for determining identity of a distribution on p6c
+    # that does not provide an identity directly
+    method !elide-identity-p6c(str $name, %meta) {
+        if !$name.contains(' ')
+          && %meta<version> -> $ver {
+            if %meta<source-url> -> $URL {
+                my @parts = $URL.split('/');
+                if determine-base(@parts[2]) -> $base {
+                    my $user := @parts[3];
+                    unless $user eq 'AlexDaniel'
+                      and @parts.tail.contains('foo') {
+                        my $auth := %meta<auth> := "$base:$user";
+                        %meta<dist> :=
+                          build $name, :$ver, :$auth, :api(%meta<api>)
+                    }
+                }
+            }
+        }
+    }
+
+    method !elide-identity(str $name, %meta) {
+        $!ecosystem eq 'cpan'
+          ?? self!elide-identity-cpan($name, %meta)
+          !! $!ecosystem eq 'p6c'
+            ?? self!elide-identity-p6c($name, %meta)
+            !! die "Cannot elide identity of '$name' in '$!ecosystem'";
+    }
+
     method !update-meta-from-json($!meta --> Nil) {
         my %identities;
         my %distro-names;
@@ -89,28 +173,30 @@ class Ecosystem:ver<0.0.3>:auth<zef:lizmat> {
         my %descriptions;
         my %matches;
 
-        with %Rakudo::CORE::META -> %distribution {
-            my $name     := %distribution<name>;
-            my $identity := %distribution<dist>;
+        with %Rakudo::CORE::META -> %meta {
+            my $name     := %meta<name>;
+            my $identity := %meta<dist>;
 
-            %identities{$identity} := %distribution.Map;
+            %identities{$identity} := %meta.Map;
             add-identity %distro-names, $name, $identity;
             add-identity %use-targets,  $_,    $identity
-              for %distribution<provides>.keys;
+              for %meta<provides>.keys;
         }
 
-        for from-json($!meta) -> %distribution {
-            if %distribution<name> -> $name {
-                my $identity := %distribution<dist>;
-                %identities{$identity} := %distribution;
-                add-identity %distro-names, $name, $identity;
+        for from-json($!meta) -> %meta {
+            if %meta<name> -> $name {
+                if %meta<dist>
+                  // self!elide-identity($name, %meta) -> $identity {
+                    %identities{$identity} := %meta;
+                    add-identity %distro-names, $name, $identity;
 
-                if %distribution<description> -> $text {
-                    add-identity %descriptions, $text, $identity;
-                }
-                if %distribution<provides> -> %provides {
-                    add-identity %use-targets, $_, $identity
-                      for %provides.keys;
+                    if %meta<description> -> $text {
+                        add-identity %descriptions, $text, $identity;
+                    }
+                    if %meta<provides> -> %provides {
+                        add-identity %use-targets, $_, $identity
+                          for %provides.keys;
+                    }
                 }
             }
         }
@@ -238,8 +324,10 @@ class Ecosystem:ver<0.0.3>:auth<zef:lizmat> {
             my $range := %!identities.values.map( -> %_ {
                 $_ with %_<release-date>
             }).minmax;
-            $!least-recent-release := $range.min.Date;
-            $!most-recent-release  := $range.max.Date;
+            if $range.min ~~ Str {
+                $!least-recent-release := $range.min.Date;
+                $!most-recent-release  := $range.max.Date;
+            }
         }
     }
 

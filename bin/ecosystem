@@ -1,7 +1,25 @@
 my %*SUB-MAIN-OPTS = :named-anywhere;
 my subset Target of Str where $_ eq 'use' | 'distro' | 'identity';
   
-use Ecosystem:ver<0.0.3>:auth<zef:lizmat>;
+use Ecosystem:ver<0.0.4>:auth<zef:lizmat>;
+
+multi sub MAIN(
+  Str  :$ecosystem = 'rea', #= rea | fez | p6c | cpan
+  Bool :$help,              #= show this
+  Bool :$verbose = False,   #= whether to provide verbose info
+) {
+    my $eco := Ecosystem.new(:$ecosystem);
+    say "$*PROGRAM-NAME v{ Ecosystem.^ver }";
+    say "-" x 80;
+    say "Ecosystem: $ecosystem ($eco.identities.elems() identities)";
+    with $eco.least-recent-release -> $from {
+        say "   Period: $from - $eco.most-recent-release()";
+    }
+    say "  Updated: $eco.IO.modified.DateTime.Str.substr(0,19)";
+    say " Meta-URL: $eco.meta-url()" if $verbose;
+    say "-" x 80;
+    say "\n$*USAGE";
+}
 
 multi sub MAIN("search",
   Str     $needle,            #= string to search for
