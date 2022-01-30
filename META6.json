@@ -16,7 +16,8 @@
   "name": "Ecosystem",
   "perl": "6.d",
   "provides": {
-    "Ecosystem": "lib/Ecosystem.rakumod"
+    "Ecosystem": "lib/Ecosystem.rakumod",
+    "Ecosystem::CLI": "lib/Ecosystem/CLI.rakumod"
   },
   "resources": [
   ],
@@ -25,5 +26,5 @@
   ],
   "test-depends": [
   ],
-  "version": "0.0.5"
+  "version": "0.0.6"
 }

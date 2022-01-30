@@ -2,6 +2,9 @@ Revision history for Ecosystem
 
 {{$NEXT}}
 
+0.0.6  2022-01-30T20:27:57+01:00
+    - Move command-line interface into separate file
+
 0.0.5  2022-01-30T20:16:44+01:00
     - Added method 'dependencies'
     - Added method 'build'
