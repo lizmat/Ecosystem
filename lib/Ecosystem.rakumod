@@ -12,7 +12,7 @@ constant %meta-url =
 
 my $store := ($*HOME // $*TMPDIR).add(".zef").add("store");
 
-class Ecosystem:ver<0.0.4>:auth<zef:lizmat> {
+class Ecosystem:ver<0.0.5>:auth<zef:lizmat> {
     has IO::Path $.IO;
     has Str $.meta-url;
     has Int $.stale-period is built(:bind) = 86400;
@@ -349,6 +349,63 @@ class Ecosystem:ver<0.0.4>:auth<zef:lizmat> {
           ?? self!update-meta-from-URL
           !! self!update-meta-from-json  # assumes it was changed
     }
+
+    sub as-short-name(str $needle) {
+        $needle eq short-name($needle)
+          ?? Nil
+          !! short-name($needle)
+    }
+
+    method !dependencies(str $needle) {
+        if %!identities{$needle} -> %meta {
+#say "found meta for $needle";
+            if %meta<depends> -> @depends-on {
+                @depends-on.map( -> str $found {
+#say "found dependency $found";
+                    ($found, self!dependencies($found)).Slip
+                }).Slip
+            }
+        }
+        elsif %!use-targets{$needle} -> @identities {
+#say "resolved $needle as use-target to @identities[0]";
+            self!dependencies(@identities.head)
+        }
+        elsif %!distro-names{$needle} -> @identities {
+#say "resolved $needle as distro-name to @identities[0]";
+            self!dependencies(@identities.head)
+        }
+        elsif as-short-name($needle) -> $short-name {
+#say "resolved $needle as short-name";
+            self!dependencies($short-name)
+        }
+        else {
+            say "** $needle not known as identity, use target or distro name";
+            Empty
+        }
+    }
+
+    method dependencies(str $use-target) {
+        self!dependencies($use-target).unique.sort(*.fc)
+    }
+
+    method build($short-name, :$ver, :$auth, :$api, :$from) {
+        build $short-name, :$ver, :$auth, :$api, :$from
+    }
+
+    method resolve(str $needle) {
+        if %!identities{$needle} {
+            $needle
+        }
+        elsif %!use-targets{$needle} -> @identities {
+            @identities.head
+        }
+        elsif %!distro-names{$needle} -> @identities {
+            @identities.head
+        }
+        else {
+            Nil
+        }
+    }
 }
 
 =begin pod
@@ -444,7 +501,34 @@ The C<stale-period> named argument specifies the number of seconds
 after which the meta information is considered to be stale and needs
 updating using the C<meta-url>.  Defaults to C<86400>, aka 1 day.
 
+=head1 CLASS METHODS
+
+=head2 build
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say Ecosystem.build("Foo", :ver<0.42>);  # Foo:ver<0.42>
+
+=end code
+
+The C<build> class method builds an identity from the given
+short-name, C<:ver>, C<:auth>, C<:api> and C<:from> parameters.
+It is basically a front-end to C<Identity::Utils>'s C<build> sub.
+
 =head1 INSTANCE METHODS
+
+=head2 dependencies
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+.say for $eco.dependencies("Ecosystem");
+
+=end code
+
+The C<dependencies> instance method returns a sorted list of C<use-targets>
+for a C<identity>, C<use-target> or C<distro-name>.
 
 =head2 distro-names
 
@@ -654,6 +738,18 @@ say $eco.most-recent-release;
 
 The C<most-recent-release> instance method returns the C<Date>
 of the most recent release in the ecosystem, if any.
+
+=head2 resolve
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say $eco.resolve("eigenstates");  # eigenstates:ver<0.0.9>:auth<zef:lizmat>
+
+=end code
+
+The C<resolve> instance method attempts to resolve the given string to the
+identity that would be assumed when specified with e.g. C<dependencies>.
 
 =head2 stale-period
 

@@ -76,8 +76,31 @@ my $eco = Ecosystem.new(stale-period => 3600);
 
 The `stale-period` named argument specifies the number of seconds after which the meta information is considered to be stale and needs updating using the `meta-url`. Defaults to `86400`, aka 1 day.
 
+CLASS METHODS
+=============
+
+build
+-----
+
+```raku
+my $eco = Ecosystem.new;
+say Ecosystem.build("Foo", :ver<0.42>);  # Foo:ver<0.42>
+```
+
+The `build` class method builds an identity from the given short-name, `:ver`, `:auth`, `:api` and `:from` parameters. It is basically a front-end to `Identity::Utils`'s `build` sub.
+
 INSTANCE METHODS
 ================
+
+dependencies
+------------
+
+```raku
+my $eco = Ecosystem.new;
+.say for $eco.dependencies("Ecosystem");
+```
+
+The `dependencies` instance method returns a sorted list of `use-targets` for a `identity`, `use-target` or `distro-name`.
 
 distro-names
 ------------
@@ -241,6 +264,16 @@ say $eco.most-recent-release;
 ```
 
 The `most-recent-release` instance method returns the `Date` of the most recent release in the ecosystem, if any.
+
+resolve
+-------
+
+```raku
+my $eco = Ecosystem.new;
+say $eco.resolve("eigenstates");  # eigenstates:ver<0.0.9>:auth<zef:lizmat>
+```
+
+The `resolve` instance method attempts to resolve the given string to the identity that would be assumed when specified with e.g. `dependencies`.
 
 stale-period
 ------------

@@ -1,7 +1,7 @@
 my %*SUB-MAIN-OPTS = :named-anywhere;
 my subset Target of Str where $_ eq 'use' | 'distro' | 'identity';
-  
-use Ecosystem:ver<0.0.4>:auth<zef:lizmat>;
+
+use Ecosystem:ver<0.0.5>:auth<zef:lizmat>;
 
 multi sub MAIN(
   Str  :$ecosystem = 'rea', #= rea | fez | p6c | cpan
@@ -21,15 +21,37 @@ multi sub MAIN(
     say "\n$*USAGE";
 }
 
+multi sub MAIN("depends",
+  Str     $needle,             #= string to search for
+  Str    :$ver,                #= :ver<> value to match
+  Str    :$auth,               #= :auth<> value to match
+  Str    :$api       = "0",    #= :api<> value to match
+  Str    :$from      = 'Raku', #= Raku | Perl5
+  Str    :$ecosystem = 'rea',  #= rea | fez | p6c | cpan
+  Bool   :$verbose   = False,  #= whether to provide verbose info
+) {
+
+    my $eco := Ecosystem.new(:$ecosystem);
+    my $identity := $eco.build:
+      $needle, :$ver, :$auth, :$api, :from($from eq 'Raku' ?? Any !! $from);
+    say "$needle resolved to $identity" if $identity ne $needle;
+    if $eco.dependencies($identity) -> @identities {
+        .say for @identities;
+    }
+    elsif $verbose {
+        exit note "No dependencies found for $identity";
+    }
+}
+
 multi sub MAIN("search",
-  Str     $needle,            #= string to search for
-  Str    :$ver,               #= :ver<> value to match
-  Str    :$auth,              #= :auth<> value to match
-  Str    :$api       = "0",   #= :api<> value to match
-  Str    :$from      = 'Raku',#= Raku | Perl5
-  Str    :$ecosystem = 'rea', #= rea | fez | p6c | cpan
-  Target :$target    = 'use', #= use | distro | identity
-  Bool   :$verbose   = False, #= whether to provide verbose info
+  Str     $needle,             #= string to search for
+  Str    :$ver,                #= :ver<> value to match
+  Str    :$auth,               #= :auth<> value to match
+  Str    :$api       = "0",    #= :api<> value to match
+  Str    :$from      = 'Raku', #= Raku | Perl5
+  Str    :$ecosystem = 'rea',  #= rea | fez | p6c | cpan
+  Target :$target    = 'use',  #= use | distro | identity
+  Bool   :$verbose   = False,  #= whether to provide verbose info
 ) {
     my $eco := Ecosystem.new(:$ecosystem);
     if $target eq 'use' {
