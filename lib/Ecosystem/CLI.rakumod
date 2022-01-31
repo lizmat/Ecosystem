@@ -1,8 +1,6 @@
-use Ecosystem:ver<0.0.5>:auth<zef:lizmat>;
+use Ecosystem:ver<0.0.7>:auth<zef:lizmat>;
 
 my subset Target of Str where $_ eq 'use' | 'distro' | 'identity';
-
-my %*SUB-MAIN-OPTS = :named-anywhere;
 
 proto sub MAIN(|) is export {*}
 multi sub MAIN(
@@ -23,7 +21,7 @@ multi sub MAIN(
     say "\n$*USAGE";
 }
 
-multi sub MAIN("depends",
+multi sub MAIN("dependencies",
   Str     $needle,             #= string to search for
   Str    :$ver,                #= :ver<> value to match
   Str    :$auth,               #= :auth<> value to match
@@ -34,14 +32,22 @@ multi sub MAIN("depends",
 ) {
 
     my $eco := Ecosystem.new(:$ecosystem);
-    my $identity := $eco.build:
-      $needle, :$ver, :$auth, :$api, :from($from eq 'Raku' ?? Any !! $from);
-    say "$needle resolved to $identity" if $identity ne $needle;
-    if $eco.dependencies($identity) -> @identities {
-        .say for @identities;
+    if $eco.resolve(
+      $needle, :$ver, :$auth, :$api, :from($from eq 'Raku' ?? Any !! $from)
+    ) -> $identity {
+        if $verbose {
+            say "Dependencies of $identity";
+            say "-" x 80;
+        }
+        if $eco.dependencies($identity) -> @identities {
+            .say for @identities;
+        }
+        elsif $verbose {
+            exit note "No dependencies found";
+        }
     }
-    elsif $verbose {
-        exit note "No dependencies found for $identity";
+    else {
+        exit note "Could not resolve $needle";
     }
 }
 

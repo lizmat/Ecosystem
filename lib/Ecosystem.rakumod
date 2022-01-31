@@ -12,7 +12,7 @@ constant %meta-url =
 
 my $store := ($*HOME // $*TMPDIR).add(".zef").add("store");
 
-class Ecosystem:ver<0.0.6>:auth<zef:lizmat> {
+class Ecosystem:ver<0.0.7>:auth<zef:lizmat> {
     has IO::Path $.IO;
     has Str $.meta-url;
     has Int $.stale-period is built(:bind) = 86400;
@@ -392,15 +392,11 @@ class Ecosystem:ver<0.0.6>:auth<zef:lizmat> {
         build $short-name, :$ver, :$auth, :$api, :$from
     }
 
-    method resolve(str $needle) {
-        if %!identities{$needle} {
-            $needle
-        }
-        elsif %!use-targets{$needle} -> @identities {
-            @identities.head
-        }
-        elsif %!distro-names{$needle} -> @identities {
-            @identities.head
+    method resolve(str $needle, :$ver, :$auth, :$api, :$from) {
+        if %!identities{$needle}
+          // %!use-targets{$needle}
+          // %!distro-names{$needle} -> @identities {
+            filter(@identities, $ver, $auth, $api, $from).head
         }
         else {
             Nil
@@ -748,7 +744,8 @@ say $eco.resolve("eigenstates");  # eigenstates:ver<0.0.9>:auth<zef:lizmat>
 
 =end code
 
-The C<resolve> instance method attempts to resolve the given string to the
+The C<resolve> instance method attempts to resolve the given string and the
+given C<:ver>, C<:auth>, C<:api> and C<:from> named arguments to the
 identity that would be assumed when specified with e.g. C<dependencies>.
 
 =head2 stale-period

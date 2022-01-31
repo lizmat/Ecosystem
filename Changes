@@ -2,6 +2,10 @@ Revision history for Ecosystem
 
 {{$NEXT}}
 
+0.0.7  2022-01-31T01:03:54+01:00
+    - Fix issue with CLI using wrong version
+    - Make "resolve" take :ver, :auth, :api, :from
+
 0.0.6  2022-01-30T20:27:57+01:00
     - Move command-line interface into separate file
 

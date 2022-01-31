@@ -273,7 +273,7 @@ my $eco = Ecosystem.new;
 say $eco.resolve("eigenstates");  # eigenstates:ver<0.0.9>:auth<zef:lizmat>
 ```
 
-The `resolve` instance method attempts to resolve the given string to the identity that would be assumed when specified with e.g. `dependencies`.
+The `resolve` instance method attempts to resolve the given string and the given `:ver`, `:auth`, `:api` and `:from` named arguments to the identity that would be assumed when specified with e.g. `dependencies`.
 
 stale-period
 ------------
