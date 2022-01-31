@@ -12,7 +12,7 @@ constant %meta-url =
 
 my $store := ($*HOME // $*TMPDIR).add(".zef").add("store");
 
-class Ecosystem:ver<0.0.7>:auth<zef:lizmat> {
+class Ecosystem:ver<0.0.8>:auth<zef:lizmat> {
     has IO::Path $.IO;
     has Str $.meta-url;
     has Int $.stale-period is built(:bind) = 86400;
@@ -402,6 +402,12 @@ class Ecosystem:ver<0.0.7>:auth<zef:lizmat> {
             Nil
         }
     }
+}
+
+sub EXPORT() {
+    Map.new: (
+      '&nice-json' => -> $data { to-json $data, :sorted-keys }
+    )
 }
 
 =begin pod

@@ -1,6 +1,13 @@
-use Ecosystem:ver<0.0.7>:auth<zef:lizmat>;
+use Ecosystem:ver<0.0.8>:auth<zef:lizmat>;
 
 my subset Target of Str where $_ eq 'use' | 'distro' | 'identity';
+
+sub meh($message) { exit note $message }
+
+my $eco;
+sub eco(str $ecosystem) {
+    $eco // ($eco := Ecosystem.new(:$ecosystem))
+}
 
 proto sub MAIN(|) is export {*}
 multi sub MAIN(
@@ -31,23 +38,22 @@ multi sub MAIN("dependencies",
   Bool   :$verbose   = False,  #= whether to provide verbose info
 ) {
 
-    my $eco := Ecosystem.new(:$ecosystem);
-    if $eco.resolve(
+    if eco($ecosystem).resolve(
       $needle, :$ver, :$auth, :$api, :from($from eq 'Raku' ?? Any !! $from)
     ) -> $identity {
         if $verbose {
             say "Dependencies of $identity";
             say "-" x 80;
         }
-        if $eco.dependencies($identity) -> @identities {
+        if $eco.dependencies($identity, :recurse($verbose)) -> @identities {
             .say for @identities;
         }
         elsif $verbose {
-            exit note "No dependencies found";
+            meh "No dependencies found";
         }
     }
     else {
-        exit note "Could not resolve $needle";
+        meh "Could not resolve $needle";
     }
 }
 
@@ -61,7 +67,7 @@ multi sub MAIN("search",
   Target :$target    = 'use',  #= use | distro | identity
   Bool   :$verbose   = False,  #= whether to provide verbose info
 ) {
-    my $eco := Ecosystem.new(:$ecosystem);
+    eco $ecosystem;
     if $target eq 'use' {
         if $eco.find-use-targets(
           $needle, :$ver, :$auth, :$api, :$from
@@ -79,7 +85,7 @@ multi sub MAIN("search",
             }
         }
         else {
-            exit note "No use-targets found for '$needle'";
+            meh "No use-targets found for '$needle'";
         }
     }
     elsif $target eq 'distro' {
@@ -100,7 +106,7 @@ multi sub MAIN("search",
             }
         }
         else {
-            exit note "No distributions found for '$needle'";
+            meh "No distributions found for '$needle'";
         }
     }
     elsif $target eq 'identity' {
@@ -110,9 +116,41 @@ multi sub MAIN("search",
             .say for @identities;
         }
         else {
-            exit note "No identities found for '$needle'";
+            meh "No identities found for '$needle'";
         }
     }
 }
+
+multi sub MAIN("meta",
+  Str     $needle,             #= use target to produce META of
+         *@additional,         #= additional keys to drill down to
+  Str    :$ver,                #= :ver<> value to match
+  Str    :$auth,               #= :auth<> value to match
+  Str    :$api       = "0",    #= :api<> value to match
+  Str    :$from      = 'Raku', #= Raku | Perl5
+  Str    :$ecosystem = 'rea',  #= rea | fez | p6c | cpan
+) {
+    if eco($ecosystem).resolve(
+      $needle, :$ver, :$auth, :$api, :$from
+    ) -> $identity {
+        if $eco.identities{$identity} -> $found {
+            my $data := $found;
+            while @additional
+              && $data ~~ Associative
+              && $data{@additional.shift} -> $deeper {
+                $data := $deeper;
+            }
+            say nice-json $data;
+        }
+        else {
+            meh "No meta information for '$identity' found";
+        }
+    }
+    else {
+        meh "'$needle' could not be resolved to an identity";
+    }
+}
+
+use shorten-sub-commands:ver<0.0.1>:auth<zef:lizmat> &MAIN;
 
 # vim: expandtab shiftwidth=4

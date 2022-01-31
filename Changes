@@ -2,6 +2,11 @@ Revision history for Ecosystem
 
 {{$NEXT}}
 
+0.0.8  2022-01-31T22:12:08+01:00
+    - Fix issue in "resolve"
+    - Add "meta" sub-command to ecosystem CLI
+    - Add dependency on "shorten-sub-commands" for CLI
+
 0.0.7  2022-01-31T01:03:54+01:00
     - Fix issue with CLI using wrong version
     - Make "resolve" take :ver, :auth, :api, :from
