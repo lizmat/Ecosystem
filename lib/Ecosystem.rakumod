@@ -1,5 +1,5 @@
 use JSON::Fast::Hyper:ver<0.0.2>:auth<zef:lizmat>;
-use Identity::Utils:ver<0.0.6>:auth<zef:lizmat>;
+use Identity::Utils:ver<0.0.8>:auth<zef:lizmat>;
 use Rakudo::CORE::META:ver<0.0.3>:auth<zef:lizmat>;
 use Map::Match:ver<0.0.3>:auth<zef:lizmat>;
 
@@ -11,8 +11,9 @@ constant %meta-url =
 ;
 
 my $store := ($*HOME // $*TMPDIR).add(".zef").add("store");
+my constant EmptyMap = Map.new;
 
-class Ecosystem:ver<0.0.8>:auth<zef:lizmat> {
+class Ecosystem:ver<0.0.9>:auth<zef:lizmat> {
     has IO::Path $.IO;
     has Str $.meta-url;
     has Int $.stale-period is built(:bind) = 86400;
@@ -22,6 +23,9 @@ class Ecosystem:ver<0.0.8>:auth<zef:lizmat> {
     has %.distro-names  is built(False);
     has %.use-targets   is built(False);
     has %.matches       is built(False);
+    has %!reverse-dependencies;
+    has $!all-unresolvable-dependencies;
+    has $!current-unresolvable-dependencies;
     has Date $!least-recent-release;
     has Date $!most-recent-release;
     has Lock $!meta-lock;
@@ -72,7 +76,9 @@ class Ecosystem:ver<0.0.8>:auth<zef:lizmat> {
     }
 
     sub sort-identities(@identities) {
-        @identities.sort(&version).reverse.sort(&short-name)
+        @identities.sort({ version($_) // "" }).reverse.sort: {
+            short-name($_).fc
+        }
     }
 
     sub sort-identities-of-hash(%hash) {
@@ -208,6 +214,10 @@ class Ecosystem:ver<0.0.8>:auth<zef:lizmat> {
         }
 
         %!identities   := %identities.Map;
+        %!reverse-dependencies := EmptyMap;
+        $!all-unresolvable-dependencies
+          := $!current-unresolvable-dependencies
+          := Any;
         %!distro-names := %distro-names.Map;
         %!use-targets  := %use-targets.Map;
 
@@ -237,9 +247,9 @@ class Ecosystem:ver<0.0.8>:auth<zef:lizmat> {
         my $version;
         my &ver-comp;
         if $ver && $ver ne '*' {
-            $version := $ver.Version;
-            &ver-comp = $ver.contains("+" | "*")
-              ?? &infix:«>»
+            $version := $ver.Version;  # could be a noop
+            &ver-comp = $version.plus || $version.whatever
+              ?? &infix:«~~»
               !! &infix:«==»;
         }
 
@@ -358,24 +368,19 @@ class Ecosystem:ver<0.0.8>:auth<zef:lizmat> {
 
     method !dependencies(str $needle) {
         if %!identities{$needle} -> %meta {
-#say "found meta for $needle";
             if %meta<depends> -> @depends-on {
                 @depends-on.map( -> str $found {
-#say "found dependency $found";
                     ($found, self!dependencies($found)).Slip
                 }).Slip
             }
         }
         elsif %!use-targets{$needle} -> @identities {
-#say "resolved $needle as use-target to @identities[0]";
             self!dependencies(@identities.head)
         }
         elsif %!distro-names{$needle} -> @identities {
-#say "resolved $needle as distro-name to @identities[0]";
             self!dependencies(@identities.head)
         }
         elsif as-short-name($needle) -> $short-name {
-#say "resolved $needle as short-name";
             self!dependencies($short-name)
         }
         else {
@@ -388,26 +393,134 @@ class Ecosystem:ver<0.0.8>:auth<zef:lizmat> {
         self!dependencies($use-target).unique.sort(*.fc)
     }
 
-    method build($short-name, :$ver, :$auth, :$api, :$from) {
-        build $short-name, :$ver, :$auth, :$api, :$from
-    }
-
-    method resolve(str $needle, :$ver, :$auth, :$api, :$from) {
-        if %!identities{$needle}
-          // %!use-targets{$needle}
-          // %!distro-names{$needle} -> @identities {
+    method resolve(
+      str $needle,
+         :$ver  = ver($needle),
+         :$auth = auth($needle),
+         :$api  = api($needle),
+         :$from = from($needle),
+    ) {
+        my str $short-name = short-name($needle);
+        if %!use-targets{$short-name}
+          // %!distro-names{$short-name} -> @identities {
             filter(@identities, $ver, $auth, $api, $from).head
         }
         else {
             Nil
         }
     }
-}
 
-sub EXPORT() {
-    Map.new: (
-      '&nice-json' => -> $data { to-json $data, :sorted-keys }
-    )
+    method !pairize(str $needle, str $identity) {
+        with self.resolve($needle) -> $resolved {
+            $resolved => $identity
+        }
+        elsif $needle {
+            $needle => $identity
+        }
+    }
+
+    method reverse-dependencies() {
+        %!reverse-dependencies || $!meta-lock.protect: {
+
+            # done if other thread already updated
+            return %!reverse-dependencies if %!reverse-dependencies;
+
+            my %reverse-dependencies;
+            for %!identities
+              .race
+              .map({
+                my $identity := .key;
+                my $depends  := .value<depends>;
+                if $depends ~~ Positional {
+                    $depends.List.map({ self!pairize($_, $identity) }).Slip
+                }
+                elsif $depends ~~ Associative {
+                    if $depends<runtime><requires> -> @required {
+                        @required.map({
+                            self!pairize: $_ ~~ Associative
+                              ?? build(.<name>, :ver(.<ver>), :auth(.<auth>),
+                                   :api(.<api>), :from(.<from>))
+                              !! $_,
+                            $identity
+                        }).Slip
+                    }
+                }
+                elsif $depends.defined {
+                    $depends => $identity
+                }
+            }) {
+                (%reverse-dependencies{.key}
+                  // (%reverse-dependencies{.key} := my str @)
+                ).push: .value;
+            }
+
+            sort-identities-of-hash %reverse-dependencies;
+
+            %!reverse-dependencies := %reverse-dependencies;
+        }
+    }
+
+    method reverse-dependencies-for-short-name(str $short-name) {
+        self.reverse-dependencies.race.map({
+            if short-name(.key) eq $short-name {
+                .value.map(*.&short-name).squish.Slip
+            }
+        }).unique
+    }
+
+    method most-recent-identity(str $needle) {
+        my str $short-name = short-name($needle);
+        if %!use-targets{$short-name}
+          // %!distro-names{$short-name} -> @identities {
+            @identities.grep({short-name($_) eq $short-name}).head // $needle
+        }
+        else {
+            Nil
+        }
+    }
+
+    method !all-unresolvable-dependencies() {
+        $!all-unresolvable-dependencies // $!meta-lock.protect: {
+            $!all-unresolvable-dependencies // do {
+                my %id := %!identities;
+                my %unr is Map = self.reverse-dependencies.grep: {
+                    %id{.key}:!exists
+                }
+                $!all-unresolvable-dependencies := %unr
+            }
+        }
+    }
+
+    method !current-unresolvable-dependencies() {
+        $!current-unresolvable-dependencies // $!meta-lock.protect: {
+            $!current-unresolvable-dependencies // do {
+                my %unr is Map = self!all-unresolvable-dependencies.map: {
+                    if .value.grep({
+                        self.most-recent-identity($_) eq $_
+                    }) -> @identities {
+                        .key => (my str @ = @identities)
+                    }
+                }
+                $!current-unresolvable-dependencies := %unr
+            }
+        }
+    }
+
+    method unresolvable-dependencies(:$all) {
+        $all
+          ?? self!all-unresolvable-dependencies
+          !! self!current-unresolvable-dependencies
+    }
+
+    method sort-identities(@identities) {
+        sort-identities @identities
+    }
+
+    # Give CLI access to rendering using whatever JSON::Fast we have
+    method to-json(\data) is implementation-detail {
+        use JSON::Fast;
+        to-json data, :sorted-keys
+    }
 }
 
 =begin pod
@@ -505,18 +618,17 @@ updating using the C<meta-url>.  Defaults to C<86400>, aka 1 day.
 
 =head1 CLASS METHODS
 
-=head2 build
+=head2 sort-identities
 
 =begin code :lang<raku>
 
-my $eco = Ecosystem.new;
-say Ecosystem.build("Foo", :ver<0.42>);  # Foo:ver<0.42>
+.say for Ecosystem.sort-identities(@identities);
 
 =end code
 
-The C<build> class method builds an identity from the given
-short-name, C<:ver>, C<:auth>, C<:api> and C<:from> parameters.
-It is basically a front-end to C<Identity::Utils>'s C<build> sub.
+The C<sort-identities> class method sorts the given identities with
+the highest version first, and then by the C<short-name> of the
+identity.
 
 =head1 INSTANCE METHODS
 
@@ -753,6 +865,32 @@ say $eco.resolve("eigenstates");  # eigenstates:ver<0.0.9>:auth<zef:lizmat>
 The C<resolve> instance method attempts to resolve the given string and the
 given C<:ver>, C<:auth>, C<:api> and C<:from> named arguments to the
 identity that would be assumed when specified with e.g. C<dependencies>.
+
+=head2 reverse-dependencies
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+my %reverse-dependencies := $eco.reverse-dependencies;
+say "Found %reverse-dependencies.elems() reverse dependencies";
+
+=end code
+
+The C<reverse-dependencies> instance method returns a C<Map> keyed on
+resolved dependencies, with a list of identities that depend on it.
+
+=head2 reverse-dependencies-for-short-name
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+.say for $eco.reverse-dependencies-for-short-name("File::Temp");
+
+=end code
+
+The C<reverse-dependencies-for-short-name> instance method returns
+a unique list of short-names of identities that depend on any
+version of the given short-name.
 
 =head2 stale-period
 

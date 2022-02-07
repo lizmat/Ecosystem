@@ -1,6 +1,11 @@
 Revision history for Ecosystem
 
 {{$NEXT}}
+    - Upped dependency on Identity::Utils to get :from<Raku> fix
+    - Added support for "reverse-dependencies"
+    - Added support for "reverse-dependencies-on-short-name"
+    - Added "reverse-dependencies" as a sub-command to CLI
+    - Remove "build" method, just use Identity Utils
 
 0.0.8  2022-01-31T22:12:08+01:00
     - Fix issue in "resolve"
