@@ -2,6 +2,10 @@ Revision history for Ecosystem
 
 {{$NEXT}}
 
+0.0.10  2022-02-09T20:16:42+01:00
+    - Make sure that --ver=* is treated as ":ver eq '*'"
+    - Released dependency on Rakudo::CORE::META for source-url
+
 0.0.9  2022-02-09T09:31:37+01:00
     - Upped dependency on Identity::Utils to get :from<Raku> fix
     - Upped dependency on "shorten-sub-commands" for CLI

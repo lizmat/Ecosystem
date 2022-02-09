@@ -1,6 +1,6 @@
 use JSON::Fast::Hyper:ver<0.0.2>:auth<zef:lizmat>;
 use Identity::Utils:ver<0.0.8>:auth<zef:lizmat>;
-use Rakudo::CORE::META:ver<0.0.3>:auth<zef:lizmat>;
+use Rakudo::CORE::META:auth<zef:lizmat>;
 use Map::Match:ver<0.0.3>:auth<zef:lizmat>;
 
 constant %meta-url =
@@ -13,7 +13,7 @@ constant %meta-url =
 my $store := ($*HOME // $*TMPDIR).add(".zef").add("store");
 my constant EmptyMap = Map.new;
 
-class Ecosystem:ver<0.0.9>:auth<zef:lizmat> {
+class Ecosystem:ver<0.0.10>:auth<zef:lizmat> {
     has IO::Path $.IO;
     has Str $.meta-url;
     has Int $.stale-period is built(:bind) = 86400;
@@ -245,12 +245,17 @@ class Ecosystem:ver<0.0.9>:auth<zef:lizmat> {
           ?? ":from<$from>"
           !! "";
         my $version;
-        my &ver-comp;
-        if $ver && $ver ne '*' {
-            $version := $ver.Version;  # could be a noop
-            &ver-comp = $version.plus || $version.whatever
-              ?? &infix:«~~»
-              !! &infix:«==»;
+        my &ver-matches;
+        if $ver {
+            if $ver eq '*' {
+                &ver-matches = { ver($_) eq "*" }
+            }
+            else {
+                $version := $ver.Version;  # could be a noop
+                &ver-matches = $version.plus || $version.whatever
+                  ?? { version($_) ~~ $version }
+                  !! { version($_) == $version }
+            }
         }
 
         @identities.grep: {
@@ -260,7 +265,7 @@ class Ecosystem:ver<0.0.9>:auth<zef:lizmat> {
               && 
             (!$auth-needle || .contains($auth-needle))
               &&
-            (!&ver-comp    || ver-comp(.&version, $version))
+            (!&ver-matches || ver-matches($_))
         }
     }
 
@@ -406,8 +411,8 @@ class Ecosystem:ver<0.0.9>:auth<zef:lizmat> {
          :$from = from($needle),
     ) {
         my str $short-name = short-name($needle);
-        if %!use-targets{$short-name}
-          // %!distro-names{$short-name} -> @identities {
+        if %!distro-names{$short-name}
+          // %!use-targets{$short-name} -> @identities {
             filter(@identities, $ver, $auth, $api, $from).head
         }
         else {
@@ -475,8 +480,8 @@ class Ecosystem:ver<0.0.9>:auth<zef:lizmat> {
 
     method most-recent-identity(str $needle) {
         my str $short-name = short-name($needle);
-        if %!use-targets{$short-name}
-          // %!distro-names{$short-name} -> @identities {
+        if %!distro-names{$short-name}
+          // %!use-targets{$short-name} -> @identities {
             @identities.grep({short-name($_) eq $short-name}).head // $needle
         }
         else {
