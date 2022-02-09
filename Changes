@@ -1,11 +1,21 @@
 Revision history for Ecosystem
 
 {{$NEXT}}
+
+0.0.9  2022-02-09T09:31:37+01:00
     - Upped dependency on Identity::Utils to get :from<Raku> fix
+    - Upped dependency on "shorten-sub-commands" for CLI
     - Added support for "reverse-dependencies"
     - Added support for "reverse-dependencies-on-short-name"
+    - Added support for "most-recent-identity"
+    - Added support for "unresolvable-dependencies"
     - Added "reverse-dependencies" as a sub-command to CLI
+    - Removed "search" as a sub-command to CLI
+    - Added "use-target" as a sub-command to CLI
+    - Added "distro" as a sub-command to CLI
+    - Added "identity" as a sub-command to CLI
     - Remove "build" method, just use Identity Utils
+    - Added more documentation to the CLI
 
 0.0.8  2022-01-31T22:12:08+01:00
     - Fix issue in "resolve"

@@ -1,22 +1,28 @@
 use Ecosystem:ver<0.0.9>:auth<zef:lizmat>;
 use Identity::Utils:ver<0.0.8>:auth<zef:lizmat>;
 
-my subset Target of Str where $_ eq 'use' | 'distro' | 'identity';
-
 sub meh($message) { exit note $message }
+sub line() { say "-" x 80 }
+
+my constant %name = (
+  rea  => 'Raku Ecosystem Archive',
+  fez  => 'Zef (Fez) Ecosystem Content Storage',
+  p6c  => 'Original Git Ecosystem Storage',
+  cpan => 'CPAN (PAUSE) Ecosystem Storage',
+).Map;
 
 my $eco;
 sub eco(str $ecosystem) {
+    CATCH { meh .Str }
     $eco // ($eco := Ecosystem.new(:$ecosystem))
 }
 my $identity;
 sub resolve($ecosystem, $needle, $ver, $auth, $api, $from) {
     $identity := eco($ecosystem).resolve:
-      $needle, :$ver, :$auth, :$api,
-      :from($from eq 'Perl6' | 'Raku' ?? Any !! $from)
+      $needle, :$ver, :$auth, :$api, :$from
 }
 
-proto sub MAIN(|c) is export { dd c; {*} }
+proto sub MAIN(|c) is export {*}
 multi sub MAIN(
   Bool() :$help      = False,  #= show this
   Str()  :$ecosystem = 'rea',  #= rea | fez | p6c | cpan
@@ -24,19 +30,50 @@ multi sub MAIN(
 ) {
     eco($ecosystem);
     say "$*PROGRAM-NAME v{ Ecosystem.^ver }";
-    say "-" x 80;
-    say "Ecosystem: $ecosystem ($eco.identities.elems() identities)";
+    line;
+    say "Ecosystem: %name{$ecosystem} ('$ecosystem' $eco.identities.elems() identities)";
     with $eco.least-recent-release -> $from {
         say "   Period: $from - $eco.most-recent-release()";
     }
     say "  Updated: $eco.IO.modified.DateTime.Str.substr(0,19)";
     say " Meta-URL: $eco.meta-url()" if $verbose;
-    say "-" x 80;
-    say "\n$*USAGE";
+    line;
+    say $help ?? qq:to/HELP/.chop !! "Extensive help available with --help";
+General Raku® Programming Language Ecosystem Inspector
+
+Allows introspection of all aspects of a Raku Ecosystem's Content Storage.
+
+Named arguments that are always available:
+  --ecosystem  the Ecosystem Content Storage to be used.
+               rea | fez | p6c | cpan, default: rea
+  --verbose    boolean, show extended information, default: False
+
+Named arguments that are available in search and informational queries:
+  --ver        the :ver<> value to use, default: none
+  --auth       the :auth<> value to use, default: none
+  --api        the :api<> value to use, default: 0
+  --from       the :from<> value to use, default: Raku
+
+Search queries (also looks in description):
+  us use-target <string>  use targets for optional string
+  di distro <string>      distribution names for optional string
+  i  identity <string>    identities for optional string
+
+Informational queries:
+  de dependencies string          dependencies for given string
+  re reverse-dependencies string  reverse dependencies for given string
+  m  meta string key(s)           META information for given string
+
+Other queries:
+  un unresolvable <--from>        unresolvable dependencies, include <:from>?
+
+All subcommands can be shortened as long as they are unique.
+HELP
+    line if $help;
 }
 
 multi sub MAIN("dependencies",
-  Str()   $needle,              #= string to search for
+  Str()   $use-target,          #= string to search for
   Str()  :$ver,                 #= :ver<> value to match
   Str()  :$auth,                #= :auth<> value to match
   Str()  :$api       = "0",     #= :api<> value to match
@@ -44,98 +81,139 @@ multi sub MAIN("dependencies",
   Str()  :$ecosystem = 'rea',   #= rea | fez | p6c | cpan
   Bool() :$verbose   = False,   #= whether to provide verbose info
 ) {
-    if resolve($ecosystem, $needle, $ver, $auth, $api, $from) -> $identity {
-        if $verbose {
-            say "Dependencies of $identity";
-            say "-" x 80;
-        }
+    if resolve($ecosystem, $use-target, $ver, $auth, $api, $from) -> $identity {
+        say $verbose
+          ?? "Recursive dependencies of $identity"
+          !! "Dependencies of $identity
+Add --verbose for recursive depencies";
+        line;
         if $eco.dependencies($identity, :recurse($verbose)) -> @identities {
             .say for @identities;
         }
-        elsif $verbose {
-            meh "No dependencies found";
+        else {
+            meh "No dependencies found for '$identity'";
         }
     }
     else {
-        meh "Could not resolve $needle";
+        my $needle := build($use-target, :$ver, :$auth, :$api, :$from);
+        meh "Could not resolve '$needle'";
     }
 }
 
-multi sub MAIN("search",
-  Str()   $needle,             #= string to search for
+multi sub MAIN("use-target",
+  Str()   $string = "",        #= string to search for
   Str()  :$ver,                #= :ver<> value to match
   Str()  :$auth,               #= :auth<> value to match
   Str()  :$api       = "0",    #= :api<> value to match
   Str()  :$from      = 'Raku', #= Raku | Perl5
   Str()  :$ecosystem = 'rea',  #= rea | fez | p6c | cpan
-  Target :$target    = 'use',  #= use | distro | identity
-  Bool()   :$verbose   = False,  #= whether to provide verbose info
+  Bool() :$verbose   = False,  #= whether to provide verbose info
 ) {
-    eco $ecosystem;
-    if $target eq 'use' {
-        if $eco.find-use-targets(
-          $needle, :$ver, :$auth, :$api, :$from
-        ).sort(*.fc) -> @use-targets {
-            if $verbose {
-                for @use-targets -> $use-target {
-                    my @distros = $eco.distros-of-use-target($use-target);
-                    say @distros == 1 && $use-target eq @distros.head
-                      ?? $use-target
-                      !! "$use-target (@distros[])";
-                }
-            }
-            else {
-                .say for @use-targets;
+    my $needle := build $string, :$ver, :$auth, :$api, :$from;
+    if eco($ecosystem).find-use-targets(
+      $string, :$ver, :$auth, :$api, :$from
+    ).sort(*.fc) -> @use-targets {
+        say $verbose
+          ?? "Use targets that match $needle and their distribution"
+          !! "Use targets that match $needle
+Add --verbose to also see their distribution";
+        line;
+        if $verbose {
+            for @use-targets -> $use-target {
+                my @distros = $eco.distros-of-use-target($use-target);
+                say @distros == 1 && $use-target eq @distros.head
+                  ?? $use-target
+                  !! "$use-target (@distros[])";
             }
         }
         else {
-            meh "No use-targets found for '$needle'";
+            .say for @use-targets;
         }
     }
-    elsif $target eq 'distro' {
-        if $eco.find-distro-names(
-          $needle, :$ver, :$auth, :$api, :$from
-        ).sort(*.fc) -> @names {
-            if $verbose {
-                my %identities := $eco.distro-names;
-                for @names -> $name {
-                    my $versions := %identities{$name}.elems;
-                    say $versions == 1
-                      ?? $name
-                      !! "$name ({$versions}x)";
-                }
-            }
-            else {
-                .say for @names;
+    else {
+        meh "No use-targets found for '$needle'";
+    }
+}
+
+multi sub MAIN("distro",
+  Str()   $needle = "",        #= string to search for
+  Str()  :$ver,                #= :ver<> value to match
+  Str()  :$auth,               #= :auth<> value to match
+  Str()  :$api       = "0",    #= :api<> value to match
+  Str()  :$from      = 'Raku', #= Raku | Perl5
+  Str()  :$ecosystem = 'rea',  #= rea | fez | p6c | cpan
+  Bool() :$verbose   = False,  #= whether to provide verbose info
+) {
+    my $identity := build $needle, :$ver, :$auth, :$api, :$from;
+    if eco($ecosystem).find-distro-names(
+      $needle, :$ver, :$auth, :$api, :$from
+    ).sort(*.fc) -> @names {
+        say $verbose
+          ?? "Distributions that match $identity and their frequency"
+          !! "Distributions that match $identity
+Add --verbose to also see their frequency";
+        line;
+        if $verbose {
+            my %identities := $eco.distro-names;
+            for @names -> $name {
+                my $versions := %identities{$name}.elems;
+                say $versions == 1
+                  ?? $name
+                  !! "$name ({$versions}x)";
             }
         }
         else {
-            meh "No distributions found for '$needle'";
+            .say for @names;
         }
     }
-    elsif $target eq 'identity' {
-        if $eco.find-identities(
-          $needle, :$ver, :$auth, :$api, :$from, :all($verbose)
-        ).sort(*.fc) -> @identities {
-            .say for @identities;
-        }
-        else {
-            meh "No identities found for '$needle'";
-        }
+    else {
+        meh "No distributions found for '$identity'";
+    }
+}
+
+multi sub MAIN("identity",
+  Str()   $string = "",        #= string to search for
+  Str()  :$ver,                #= :ver<> value to match
+  Str()  :$auth,               #= :auth<> value to match
+  Str()  :$api       = "0",    #= :api<> value to match
+  Str()  :$from      = 'Raku', #= Raku | Perl5
+  Str()  :$ecosystem = 'rea',  #= rea | fez | p6c | cpan
+  Bool() :$verbose   = False,  #= whether to provide verbose info
+) {
+    my $needle := build $string, :$ver, :$auth, :$api, :$from;
+    if eco($ecosystem).find-identities(
+      $string, :$ver, :$auth, :$api, :$from, :all($verbose)
+    ).sort(*.fc) -> @identities {
+        say $verbose
+          ?? "All identities that match $needle"
+          !! "Most recent version of identities that match $needle
+Add --verbose to see all identities";
+        line;
+        .say for @identities;
+    }
+    else {
+        meh "No identities found matching '$needle'";
     }
 }
 
 multi sub MAIN("meta",
-  Str()   $needle,             #= use target to produce META of
-         *@additional,         #= additional keys to drill down to
-  Str()  :$ver,                #= :ver<> value to match, default: highest
-  Str()  :$auth,               #= :auth<> value to match, default: any
+  Str()   $use-target,         #= string to search for
+          *@additional,        #= additional keys to drill down to
+  Str()  :$ver,                #= :ver<> value to match
+  Str()  :$auth,               #= :auth<> value to match
   Str()  :$api       = "0",    #= :api<> value to match
-  Str()  :$from      = 'Raku', #= Raku | Perl5 | bin | native
+  Str()  :$from      = 'Raku', #= Raku | Perl5
   Str()  :$ecosystem = 'rea',  #= rea | fez | p6c | cpan
+  Bool() :$verbose   = False,  #= whether to provide verbose info
 ) {
-    if resolve($ecosystem, $needle, $ver, $auth, $api, $from) -> $identity {
+    my $needle := build($use-target, :$ver, :$auth, :$api, :$from);
+    if resolve($ecosystem, $use-target, $ver, $auth, $api, $from) -> $identity {
         if $eco.identities{$identity} -> $found {
+            say $needle eq $identity
+              ?? "Meta information of $needle @additional[]"
+              !! "Meta information of $identity @additional[]
+Resolved from $needle";
+            line;
             my $data := $found;
             while @additional
               && $data ~~ Associative
@@ -149,12 +227,12 @@ multi sub MAIN("meta",
         }
     }
     else {
-        meh "'$needle' could not be resolved to an identity";
+        meh "'$needle' did not resolve to a known identity";
     }
 }
 
 multi sub MAIN("reverse-dependencies",
-  Str()   $needle,             #= use target to reverse dependencies of
+  Str()   $use-target,         #= use target to reverse dependencies of
   Str()  :$ver,                #= :ver<> value to match, default: highest
   Str()  :$auth,               #= :auth<> value to match, default: any
   Str()  :$api       = "0",    #= :api<> value to match
@@ -162,47 +240,56 @@ multi sub MAIN("reverse-dependencies",
   Str()  :$ecosystem = 'rea',  #= rea | fez | p6c | cpan
   Bool() :$verbose   = False,  #= whether to provide verbose info
 ) {
-    if resolve($ecosystem, $needle, $ver, $auth, $api, $from)
-      // build($needle, :$ver, :$auth, :$api, :$from) -> $identity {
+    my $needle := build $use-target, :$ver, :$auth, :$api, :$from;
+    if resolve($ecosystem, $use-target, $ver, $auth, $api, $from)
+      // $needle -> $identity {
         if $verbose {
-            say "Reverse dependencies of $identity";
-            say "-" x 80;
+            say $needle eq $identity
+              ?? "Reverse dependency identities of $identity"
+              !! "Reverse dependency identities of $identity
+Resolved from $needle";
+            line;
             if $eco.reverse-dependencies{$identity} -> @identities {
                 .say for Ecosystem.sort-identities: @identities;
             }
             else {
-                meh "Does not appear to have any reverse dependencies";
+                meh "$identity does not appear to have any reverse dependencies";
             }
         }
         else {
             my str $short-name = short-name($identity);
-            say "Reverse dependencies of $short-name";
-            say "-" x 80;
+            say "Reverse dependencies of $short-name
+Add --verbose to see reverse dependency identies";
+            line;
             if $eco.reverse-dependencies-for-short-name($short-name) -> @sn {
                 .say for @sn.sort(*.fc)
             }
             else {
-                meh "Does not appear to have any reverse dependencies";
+                meh "$short-name does not appear to have any reverse dependencies";
             }
         }
     }
     else {
-        meh "'$needle' could not be resolved to an identity";
+        meh "$needle could not be resolved to an identity";
     }
 }
 
 multi sub MAIN("unresolvable",
   Str()  :$ecosystem = 'rea',  #= rea | fez | p6c | cpan
+  Bool() :$from      = False,  #= include unresolvables with :from
   Bool() :$verbose   = False,  #= whether to provide verbose info
 ) {
     say $verbose
       ?? "All unresolvable identities"
-      !! "Unresolvable identities in most recent versions only";
-    say "-" x 80;
-    my %rd := eco($ecosystem).reverse-dependencies;
-    if $eco.unresolvable-dependencies(:all($verbose)) -> %ud {
+      !! "Unresolvable identities in most recent versions only
+Add --verbose to see all unresolvable identities";
+    say "Add --from to also see identities with a :from<> setting"
+      unless $from;
+    line;
+    if eco($ecosystem).unresolvable-dependencies(:all($verbose)) -> %ud {
         for %ud.keys.sort(*.fc) {
-            say "$_:";
+            next if !$from && from($_);
+            say "$_";
             say "  $_" for %ud{$_};
             say "";
         }
@@ -212,6 +299,6 @@ multi sub MAIN("unresolvable",
     }
 }
 
-use shorten-sub-commands:ver<0.0.2>:auth<zef:lizmat> &MAIN;
+use shorten-sub-commands:ver<0.0.5>:auth<zef:lizmat> &MAIN;
 
 # vim: expandtab shiftwidth=4

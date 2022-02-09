@@ -264,10 +264,11 @@ class Ecosystem:ver<0.0.9>:auth<zef:lizmat> {
         }
     }
 
-    method find-identities(Any:D $needle, :$ver, :$auth, :$api, :$from, :$all) {
-        if filter
-          %!matches{$needle}.map(*.Slip).unique, $ver, $auth, $api, $from
-        -> @identities {
+    method find-identities(Any:D $needle = "", :$ver, :$auth, :$api, :$from, :$all) {
+        if filter $needle
+                    ?? %!matches{$needle}.map(*.Slip).unique
+                    !! %!identities.keys,
+                  $ver, $auth, $api, $from -> @identities {
             my %seen;
             sort-identities $all
               ?? @identities
@@ -275,10 +276,12 @@ class Ecosystem:ver<0.0.9>:auth<zef:lizmat> {
         }
     }
 
-    method find-distro-names(Any:D $needle, *%_) {
+    method find-distro-names(Any:D $needle = "", *%_) {
         my &accepts := $needle ~~ Regex
           ?? -> $name { $needle.ACCEPTS($name) }
-          !! -> $name { $name.contains($needle, :i, :m) }
+          !! $needle
+            ?? -> $name { $name.contains($needle, :i, :m) }
+            !! -> $name { True }
 
         my %seen;
         self.find-identities($needle, |%_, :all).map: {
@@ -288,10 +291,12 @@ class Ecosystem:ver<0.0.9>:auth<zef:lizmat> {
         }
     }
 
-    method find-use-targets(Any:D $needle, *%_) {
+    method find-use-targets(Any:D $needle = "", *%_) {
         my &accepts := $needle ~~ Regex
           ?? -> $use-target { $needle.ACCEPTS($use-target) }
-          !! -> $use-target { $use-target.contains($needle, :i, :m) }
+          !! $needle
+            ?? -> $use-target { $use-target.contains($needle, :i, :m) }
+            !! -> $use-target { True }
 
         my %seen;
         self.find-identities($needle, |%_, :all).map: {
@@ -495,9 +500,9 @@ class Ecosystem:ver<0.0.9>:auth<zef:lizmat> {
         $!current-unresolvable-dependencies // $!meta-lock.protect: {
             $!current-unresolvable-dependencies // do {
                 my %unr is Map = self!all-unresolvable-dependencies.map: {
-                    if .value.grep({
-                        self.most-recent-identity($_) eq $_
-                    }) -> @identities {
+                    if .value.map({
+                        self.most-recent-identity($_)
+                    }).unique -> @identities {
                         .key => (my str @ = @identities)
                     }
                 }
@@ -688,11 +693,13 @@ with the C<:ecosystem> named argument.
 my $eco = Ecosystem.new;
 .say for $eco.find-distro-names: / JSON /;
 
+.say for $eco.find-distro-names: :auth<zef:lizmat>;
+
 =end code
 
 The C<find-distro-names> instance method returns the distribution names
-that match the given string or regular expression, potentially filtered
-by C<:ver>, C<:auth>, C<:api> and/or C<:from> value.
+that match the optional given string or regular expression, potentially
+filtered by a C<:ver>, C<:auth>, C<:api> and/or C<:from> value.
 
 =head2 find-identities
 
@@ -701,14 +708,22 @@ by C<:ver>, C<:auth>, C<:api> and/or C<:from> value.
 my $eco = Ecosystem.new;
 .say for $eco.find-identities: / Utils /, :ver<0.0.3+>, :auth<zef:lizmat>;
 
+.say for $eco.find-identities: :auth<zef:lizmat>, :all;
+
 =end code
 
 The C<find-identities> method returns identities (sorted by short-name,
-latest version first) that match the given string or regular expression,
-potentially filtered by C<:ver>, C<:auth>, C<:api> and/or C<:from> value.
+latest version first) that match the optional given string or regular
+expression, potentially filtered by C<:ver>, C<:auth>, C<:api> and/or
+C<:from> value.
 
-The specified string is looked up in the distribution names, the use-targets
-and the descriptions of the distributions.
+The specified string is looked up / regular expression is matched in
+the distribution names, the use-targets and the descriptions of the
+distributions.
+
+By default, only the identity with the highest C<:ver> value will be
+returned: a C<:all> flag can be specified to return B<all> possible
+identities.
 
 =head2 find-use-targets
 
@@ -717,11 +732,14 @@ and the descriptions of the distributions.
 my $eco = Ecosystem.new;
 .say for $eco.find-use-targets: / JSON /;
 
+.say for $eco.find-use-targets: :auth<zef:lizmat>;
+
 =end code
 
 The C<find-use-targets> instance method returns the strings that can be
-used in a C<use> command that match the given string or regular expression,
-potentially filtered by C<:ver>, C<:auth>, C<:api> and/or C<:from> value.
+used in a C<use> command that match the optional given string or regular
+expression, potentially filtered by a C<:ver>, C<:auth>, C<:api> and/or
+C<:from> value.
 
 =head2 identities
 
@@ -917,6 +935,22 @@ $eco.update;
 The C<update> instance method re-fetches the META information from
 the C<meta-url> and updates it internal state in a thread-safe
 manner.
+
+=head2 unresolvable-dependencies
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say "Found $eco.unresolvable-dependencies.elems() unresolvable dependencies";
+
+=end code
+
+The C<unresolvable-dependencies> instance method returns a C<Map>
+keyed on an unresolved dependency, and a C<List> of identities
+that have this unresolvable dependency as the value.  By default,
+only current (as in the most recent version) identities will be
+in the list.  You can specify the named C<:all> argument to have
+also have the non-current identities listed.
 
 =head2 use-targets
 

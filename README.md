@@ -79,15 +79,14 @@ The `stale-period` named argument specifies the number of seconds after which th
 CLASS METHODS
 =============
 
-build
------
+sort-identities
+---------------
 
 ```raku
-my $eco = Ecosystem.new;
-say Ecosystem.build("Foo", :ver<0.42>);  # Foo:ver<0.42>
+.say for Ecosystem.sort-identities(@identities);
 ```
 
-The `build` class method builds an identity from the given short-name, `:ver`, `:auth`, `:api` and `:from` parameters. It is basically a front-end to `Identity::Utils`'s `build` sub.
+The `sort-identities` class method sorts the given identities with the highest version first, and then by the `short-name` of the identity.
 
 INSTANCE METHODS
 ================
@@ -138,9 +137,11 @@ find-distro-names
 ```raku
 my $eco = Ecosystem.new;
 .say for $eco.find-distro-names: / JSON /;
+
+.say for $eco.find-distro-names: :auth<zef:lizmat>;
 ```
 
-The `find-distro-names` instance method returns the distribution names that match the given string or regular expression, potentially filtered by `:ver`, `:auth`, `:api` and/or `:from` value.
+The `find-distro-names` instance method returns the distribution names that match the optional given string or regular expression, potentially filtered by a `:ver`, `:auth`, `:api` and/or `:from` value.
 
 find-identities
 ---------------
@@ -148,11 +149,15 @@ find-identities
 ```raku
 my $eco = Ecosystem.new;
 .say for $eco.find-identities: / Utils /, :ver<0.0.3+>, :auth<zef:lizmat>;
+
+.say for $eco.find-identities: :auth<zef:lizmat>, :all;
 ```
 
-The `find-identities` method returns identities (sorted by short-name, latest version first) that match the given string or regular expression, potentially filtered by `:ver`, `:auth`, `:api` and/or `:from` value.
+The `find-identities` method returns identities (sorted by short-name, latest version first) that match the optional given string or regular expression, potentially filtered by `:ver`, `:auth`, `:api` and/or `:from` value.
 
-The specified string is looked up in the distribution names, the use-targets and the descriptions of the distributions.
+The specified string is looked up / regular expression is matched in the distribution names, the use-targets and the descriptions of the distributions.
+
+By default, only the identity with the highest `:ver` value will be returned: a `:all` flag can be specified to return **all** possible identities.
 
 find-use-targets
 ----------------
@@ -160,9 +165,11 @@ find-use-targets
 ```raku
 my $eco = Ecosystem.new;
 .say for $eco.find-use-targets: / JSON /;
+
+.say for $eco.find-use-targets: :auth<zef:lizmat>;
 ```
 
-The `find-use-targets` instance method returns the strings that can be used in a `use` command that match the given string or regular expression, potentially filtered by `:ver`, `:auth`, `:api` and/or `:from` value.
+The `find-use-targets` instance method returns the strings that can be used in a `use` command that match the optional given string or regular expression, potentially filtered by a `:ver`, `:auth`, `:api` and/or `:from` value.
 
 identities
 ----------
@@ -275,6 +282,27 @@ say $eco.resolve("eigenstates");  # eigenstates:ver<0.0.9>:auth<zef:lizmat>
 
 The `resolve` instance method attempts to resolve the given string and the given `:ver`, `:auth`, `:api` and `:from` named arguments to the identity that would be assumed when specified with e.g. `dependencies`.
 
+reverse-dependencies
+--------------------
+
+```raku
+my $eco = Ecosystem.new;
+my %reverse-dependencies := $eco.reverse-dependencies;
+say "Found %reverse-dependencies.elems() reverse dependencies";
+```
+
+The `reverse-dependencies` instance method returns a `Map` keyed on resolved dependencies, with a list of identities that depend on it.
+
+reverse-dependencies-for-short-name
+-----------------------------------
+
+```raku
+my $eco = Ecosystem.new;
+.say for $eco.reverse-dependencies-for-short-name("File::Temp");
+```
+
+The `reverse-dependencies-for-short-name` instance method returns a unique list of short-names of identities that depend on any version of the given short-name.
+
 stale-period
 ------------
 
@@ -294,6 +322,16 @@ $eco.update;
 ```
 
 The `update` instance method re-fetches the META information from the `meta-url` and updates it internal state in a thread-safe manner.
+
+unresolvable-dependencies
+-------------------------
+
+```raku
+my $eco = Ecosystem.new;
+say "Found $eco.unresolvable-dependencies.elems() unresolvable dependencies";
+```
+
+The `unresolvable-dependencies` instance method returns a `Map` keyed on an unresolved dependency, and a `List` of identities that have this unresolvable dependency as the value. By default, only current (as in the most recent version) identities will be in the list. You can specify the named `:all` argument to have also have the non-current identities listed.
 
 use-targets
 -----------
