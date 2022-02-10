@@ -6,9 +6,9 @@
   "build-depends": [
   ],
   "depends": [
-    "JSON::Fast::Hyper:ver<0.0.2>:auth<zef:lizmat>",
+    "JSON::Fast::Hyper:ver<0.0.3>:auth<zef:lizmat>",
     "Rakudo::CORE::META:ver<0.0.5+>:auth<zef:lizmat>",
-    "Identity::Utils:ver<0.0.8>:auth<zef:lizmat>",
+    "Identity::Utils:ver<0.0.9>:auth<zef:lizmat>",
     "Map::Match:ver<0.0.3>:auth<zef:lizmat>",
     "shorten-sub-commands:ver<0.0.5>:auth<zef:lizmat>"
   ],
@@ -24,8 +24,11 @@
   ],
   "source-url": "https://github.com/lizmat/Ecosystem.git",
   "tags": [
+    "ECOSYSTEM",
+    "META",
+    "RIVER"
   ],
   "test-depends": [
   ],
-  "version": "0.0.10"
+  "version": "0.0.11"
 }

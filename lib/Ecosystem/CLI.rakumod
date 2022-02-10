@@ -1,5 +1,5 @@
-use Ecosystem:ver<0.0.10>:auth<zef:lizmat>;
-use Identity::Utils:ver<0.0.8>:auth<zef:lizmat>;
+use Ecosystem:ver<0.0.11>:auth<zef:lizmat>;
+use Identity::Utils:ver<0.0.9>:auth<zef:lizmat>;
 
 sub meh($message) { exit note $message }
 sub line() { say "-" x 80 }
@@ -66,6 +66,7 @@ Informational queries:
 
 Other queries:
   un unresolvable <--from>        unresolvable dependencies, include <:from>?
+  ri river <--top>                most referenced modules
 
 All subcommands can be shortened as long as they are unique.
 HELP
@@ -271,6 +272,26 @@ Add --verbose to see reverse dependency identies";
     }
     else {
         meh "$needle could not be resolved to an identity";
+    }
+}
+
+multi sub MAIN("river",
+  Str()  :$ecosystem = 'rea',          #= rea | fez | p6c | cpan
+  Bool() :$verbose   = False,          #= whether to provide verbose info
+  Int()  :$top = $verbose ?? 3 !! 20,  #= entries to list from top
+) {
+    say $verbose
+      ?? "Top $top distributions with their dependees"
+      !! "Top $top distributions and number of dependees";
+    say "Add --verbose to also see the actual dependees"
+      unless $verbose;
+    line;
+    for eco($ecosystem).river.sort( -> $a, $b {
+        $b.value.elems cmp $a.value.elems
+          || $a.key.fc cmp $b.key.fc
+    }).head($top) {
+        say "$_.key() ($_.value.elems())";
+        say "  $_.value()[]\n" if $verbose
     }
 }
 

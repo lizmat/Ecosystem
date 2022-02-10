@@ -25,7 +25,7 @@ Ecosystem provides the basic logic to accessing a Raku Ecosystem, defaulting to 
 COMMAND LINE INTERFACE
 ======================
 
-The `ecosystem` script provides a direct way to interrogate the contents of a given eco-system. Please see the usage information of the script for further information.
+The `ecosystem` script provides a direct way to interrogate the contents of a given eco-system. Please see the usage information of the script for further information (use `--help` for extensive help).
 
 CONSTRUCTOR ARGUMENTS
 =====================
@@ -79,6 +79,16 @@ The `stale-period` named argument specifies the number of seconds after which th
 CLASS METHODS
 =============
 
+dependencies-from-meta
+----------------------
+
+```raku
+my $eco = Ecosystem.new;
+.say for $eco.dependencies-from-meta(from-json $io.slurp);
+```
+
+The `dependencies-from-meta` class method returns the list of `use-targets` as specified in the `depends` field of the given hash with meta information.
+
 sort-identities
 ---------------
 
@@ -99,7 +109,7 @@ my $eco = Ecosystem.new;
 .say for $eco.dependencies("Ecosystem");
 ```
 
-The `dependencies` instance method returns a sorted list of `use-targets` for a `identity`, `use-target` or `distro-name`.
+The `dependencies` instance method returns a sorted list of all `use-target`s (either directly or recursively) for an `identity`, `use-target` or `distro-name`.
 
 distro-names
 ------------
@@ -302,6 +312,17 @@ my $eco = Ecosystem.new;
 ```
 
 The `reverse-dependencies-for-short-name` instance method returns a unique list of short-names of identities that depend on any version of the given short-name.
+
+river
+-----
+
+```raku
+my $eco = Ecosystem.new;
+say "Top five modules on the Raku Ecosystem River:";
+.say for $eco.river.sort(-*.value.elems).map(*.key).head(5);
+```
+
+The `river` instance method returns a `Map` keyed on short-name of an identity, with as value a list of short-names of identities that depend on it **without** having pinned `:ver` and `:auth` in their dependency specification.
 
 stale-period
 ------------

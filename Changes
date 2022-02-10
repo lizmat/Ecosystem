@@ -2,6 +2,13 @@ Revision history for Ecosystem
 
 {{$NEXT}}
 
+0.0.11  2022-02-10T21:15:27+01:00
+    - Add support for "river"
+    - Add support for "dependencies-from-meta"
+    - Upped dependency on JSON::Fast::Hyper to get :immutable support
+    - Upped dependency on Identity::Utils to get support for "is-pinned"
+    - Added "river" as a sub-command to CLI
+
 0.0.10  2022-02-09T20:16:42+01:00
     - Make sure that --ver=* is treated as ":ver eq '*'"
     - Released dependency on Rakudo::CORE::META for source-url
