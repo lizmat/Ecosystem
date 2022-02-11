@@ -2,6 +2,9 @@ Revision history for Ecosystem
 
 {{$NEXT}}
 
+0.0.13  2022-02-11T15:20:34+01:00
+    - Remove failing test
+
 0.0.12  2022-02-11T15:00:02+01:00
     - Made "matches" lazy
     - Added "identity-dependencies" method
