@@ -2,6 +2,13 @@ Revision history for Ecosystem
 
 {{$NEXT}}
 
+0.0.12  2022-02-11T15:00:02+01:00
+    - Made "matches" lazy
+    - Added "identity-dependencies" method
+    - Added "unversioned-distro-names" method
+    - Made sure that instance methods can only be called on instances
+    - Made sure that any subs are lexically scoped
+
 0.0.11  2022-02-10T21:15:27+01:00
     - Add support for "river"
     - Add support for "dependencies-from-meta"

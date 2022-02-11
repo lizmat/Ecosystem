@@ -192,6 +192,18 @@ say "Found %identities.elems() identities";
 
 The `identities` instance method returns a `Map` keyed on identity string, with a `Map` of the META information of that identity as the value.
 
+identity-dependencies
+---------------------
+
+```raku
+my $eco = Ecosystem.new;
+.say for $eco.identity-dependencies($identity);
+
+.say for $eco.identity-dependencies($identity, :all);
+```
+
+The `identity-dependencies` instance method returns a sorted list of the dependencies of the given **identity** string, if any. Takes an optional `:all` named to also return any dependencies of the initial dependencies, recursively.
+
 identity-release-Date
 ---------------------
 
@@ -353,6 +365,16 @@ say "Found $eco.unresolvable-dependencies.elems() unresolvable dependencies";
 ```
 
 The `unresolvable-dependencies` instance method returns a `Map` keyed on an unresolved dependency, and a `List` of identities that have this unresolvable dependency as the value. By default, only current (as in the most recent version) identities will be in the list. You can specify the named `:all` argument to have also have the non-current identities listed.
+
+unversioned-distros
+-------------------
+
+```raku
+my $eco = Ecosystem.new;
+say "Found $eco.unversioned-distro-names.elems() unversioned distributions";
+```
+
+The `unversioned-distro-names` instance method returns a sorted list of distribution names (identity without `:ver`) that do not have any release with a valid `:ver` value (typically **:ver<*>**).
 
 use-targets
 -----------

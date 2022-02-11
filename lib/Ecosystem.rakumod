@@ -12,7 +12,7 @@ constant %meta-url =
 
 my $store := ($*HOME // $*TMPDIR).add(".zef").add("store");
 
-class Ecosystem:ver<0.0.11>:auth<zef:lizmat> {
+class Ecosystem:ver<0.0.12>:auth<zef:lizmat> {
     has IO::Path $.IO;
     has Str $.meta-url;
     has Int $.stale-period is built(:bind) = 86400;
@@ -21,7 +21,7 @@ class Ecosystem:ver<0.0.11>:auth<zef:lizmat> {
     has %.identities    is built(False);
     has %.distro-names  is built(False);
     has %.use-targets   is built(False);
-    has %.matches       is built(False);
+    has $!matches;
     has $!reverse-dependencies;
     has $!all-unresolvable-dependencies;
     has $!current-unresolvable-dependencies;
@@ -66,7 +66,7 @@ class Ecosystem:ver<0.0.11>:auth<zef:lizmat> {
         }
     }
 
-    sub add-identity(%hash, str $key, str $identity) {
+    my sub add-identity(%hash, str $key, str $identity) {
         if %hash{$key} -> @identities {
             @identities.push($identity)
         }
@@ -75,13 +75,13 @@ class Ecosystem:ver<0.0.11>:auth<zef:lizmat> {
         }
     }
 
-    sub sort-identities(@identities) {
+    my sub sort-identities(@identities) {
         @identities.sort({ version($_) // "" }).reverse.sort: {
             short-name($_).fc
         }
     }
 
-    sub sort-identities-of-hash(%hash) {
+    my sub sort-identities-of-hash(%hash) {
         for %hash.kv -> $key, @identities {
             %hash{$key} := my str @ =
               @identities.unique.sort(&version).reverse.sort(&short-name);
@@ -89,13 +89,13 @@ class Ecosystem:ver<0.0.11>:auth<zef:lizmat> {
     }
 
     my constant @extensions = <.tar.gz .tgz .zip>;
-    sub no-extension(Str:D $string) {
+    my sub no-extension(Str:D $string) {
         return $string.chop(.chars) if $string.ends-with($_) for @extensions;
     }
-    sub extension(Str:D $string) {
+    my sub extension(Str:D $string) {
         @extensions.first: { $string.ends-with($_) }
     }
-    sub determine-base($domain) {
+    my sub determine-base($domain) {
         $domain
           ?? $domain eq 'raw.githubusercontent.com' | 'github.com'
             ?? 'github'
@@ -177,7 +177,6 @@ class Ecosystem:ver<0.0.11>:auth<zef:lizmat> {
         my %distro-names;
         my %use-targets;
         my %descriptions;
-        my %matches;
 
         with %Rakudo::CORE::META -> %meta {
             my $name     := %meta<name>;
@@ -196,9 +195,6 @@ class Ecosystem:ver<0.0.11>:auth<zef:lizmat> {
                     %identities{$identity} := %meta;
                     add-identity %distro-names, $name, $identity;
 
-                    if %meta<description> -> $text {
-                        add-identity %descriptions, $text, $identity;
-                    }
                     if %meta<provides> -> %provides {
                         add-identity %use-targets, $_, $identity
                           for %provides.keys;
@@ -218,25 +214,13 @@ class Ecosystem:ver<0.0.11>:auth<zef:lizmat> {
         %!use-targets  := %use-targets.Map;
 
         # reset all dependent data structures
-        $!reverse-dependencies
+        $!least-recent-release = $!most-recent-release = Nil;
+        $!matches
+          := $!reverse-dependencies
           := $!all-unresolvable-dependencies
           := $!current-unresolvable-dependencies
           := $!river
           := Any;
-
-        for %distro-names, %use-targets, %descriptions -> %hash {
-            for %hash.kv -> str $key, str @additional {
-                if %matches{$key} -> @identities {
-                    @identities.append: @additional
-                }
-                else {
-                    %matches{$key} := (my str @ = @additional);
-                }
-            }
-        }
-        %!matches := Map::Match.new: %matches;
-
-        $!least-recent-release = $!most-recent-release = Nil;
     }
 
     my sub filter(@identities, $ver, $auth, $api, $from) {
@@ -272,9 +256,11 @@ class Ecosystem:ver<0.0.11>:auth<zef:lizmat> {
         }
     }
 
-    method find-identities(Any:D $needle = "", :$ver, :$auth, :$api, :$from, :$all) {
+    method find-identities(Ecosystem:D:
+      Any:D $needle = "", :$ver, :$auth, :$api, :$from, :$all
+    ) {
         if filter $needle
-                    ?? %!matches{$needle}.map(*.Slip).unique
+                    ?? self.matches{$needle}.map(*.Slip).unique
                     !! %!identities.keys,
                   $ver, $auth, $api, $from -> @identities {
             my %seen;
@@ -284,7 +270,7 @@ class Ecosystem:ver<0.0.11>:auth<zef:lizmat> {
         }
     }
 
-    method find-distro-names(Any:D $needle = "", *%_) {
+    method find-distro-names(Ecosystem:D: Any:D $needle = "", *%_) {
         my &accepts := $needle ~~ Regex
           ?? -> $name { $needle.ACCEPTS($name) }
           !! $needle
@@ -299,7 +285,7 @@ class Ecosystem:ver<0.0.11>:auth<zef:lizmat> {
         }
     }
 
-    method find-use-targets(Any:D $needle = "", *%_) {
+    method find-use-targets(Ecosystem:D: Any:D $needle = "", *%_) {
         my &accepts := $needle ~~ Regex
           ?? -> $use-target { $needle.ACCEPTS($use-target) }
           !! $needle
@@ -316,18 +302,26 @@ class Ecosystem:ver<0.0.11>:auth<zef:lizmat> {
         }
     }
 
-    method identity-url(str $identity) {
+    method identity-url(Ecosystem:D: str $identity) {
         %!identities{$identity}<source-url>
     }
 
-    method identity-release-Date(str $identity) {
+    method identity-release-Date(Ecosystem:D: str $identity) {
         %!identities{$identity}<release-date>.Date
     }
-    method identity-release-yyyy-mm-dd(str $identity) {
+    method identity-release-yyyy-mm-dd(Ecosystem:D: str $identity) {
         %!identities{$identity}<release-date>
     }
+    method identity-dependencies(Ecosystem:D: str $identity, :$all) {
+        if %!identities{$identity} -> %meta {
+            ($all
+              ?? self!dependencies($identity).unique
+              !! dependencies-from-depends(%meta<depends>)
+            ).sort(*.fc)
+        }
+    }
 
-    sub identities2distros(@identities) {
+    my sub identities2distros(@identities) {
         my %seen;
         @identities.map: {
             if short-name($_) -> $name {
@@ -373,14 +367,14 @@ class Ecosystem:ver<0.0.11>:auth<zef:lizmat> {
           !! self!update-meta-from-json  # assumes it was changed
     }
 
-    sub as-short-name(str $needle) {
+    my sub as-short-name(str $needle) {
         $needle eq short-name($needle)
           ?? Nil
           !! short-name($needle)
     }
 
-    multi sub dependencies-from-depends(Any:U $) { Empty }
-    multi sub dependencies-from-depends(Any:D $depends) {
+    my multi sub dependencies-from-depends(Any:U $) { Empty }
+    my multi sub dependencies-from-depends(Any:D $depends) {
         if $depends ~~ Positional {
             $depends
         }
@@ -417,15 +411,11 @@ class Ecosystem:ver<0.0.11>:auth<zef:lizmat> {
         }
     }
 
-    method dependencies-from-meta(%meta) {
-        dependencies-from-depends(%meta<depends>).Slip
-    }
-
-    method dependencies(str $needle) {
+    method dependencies(Ecosystem:D: str $needle) {
         self!dependencies($needle).unique.sort(*.fc)
     }
 
-    method resolve(
+    method resolve(Ecosystem:D:
       str $needle,
          :$ver  = ver($needle),
          :$auth = auth($needle),
@@ -442,7 +432,7 @@ class Ecosystem:ver<0.0.11>:auth<zef:lizmat> {
         }
     }
 
-    method reverse-dependencies() {
+    method reverse-dependencies(Ecosystem:D:) {
         $!reverse-dependencies // $!meta-lock.protect: {
 
             # done if other thread already updated
@@ -469,7 +459,7 @@ class Ecosystem:ver<0.0.11>:auth<zef:lizmat> {
         }
     }
 
-    method reverse-dependencies-for-short-name(str $short-name) {
+    method reverse-dependencies-for-short-name(Ecosystem:D: str $short-name) {
         self.reverse-dependencies.race.map({
             if short-name(.key) eq $short-name {
                 .value.map(*.&short-name).squish.Slip
@@ -477,7 +467,7 @@ class Ecosystem:ver<0.0.11>:auth<zef:lizmat> {
         }).unique
     }
 
-    method most-recent-identity(str $needle) {
+    method most-recent-identity(Ecosystem:D: str $needle) {
         my str $short-name = short-name($needle);
         if %!distro-names{$short-name}
           // %!use-targets{$short-name} -> @identities {
@@ -515,17 +505,42 @@ class Ecosystem:ver<0.0.11>:auth<zef:lizmat> {
         }
     }
 
-    method unresolvable-dependencies(:$all) {
+    method unresolvable-dependencies(Ecosystem:D: :$all) {
         $all
           ?? self!all-unresolvable-dependencies
           !! self!current-unresolvable-dependencies
     }
 
-    method sort-identities(@identities) {
-        sort-identities @identities
+    method matches(Ecosystem:D:) {
+        $!matches // $!meta-lock.protect: {
+            $!matches // do {
+                my %matches;
+                for %!distro-names, %!use-targets -> %hash {
+                    for %hash.kv -> str $key, @additional {
+                        if %matches{$key} -> @strings {
+                            @strings.append: @additional
+                        }
+                        else {
+                            %matches{$key} := (my str @ = @additional);
+                        }
+                    }
+                    for %!identities.kv -> $identity, %meta {
+                        if %meta<description> -> $text {
+                            if %matches{$identity} -> @strings {
+                                @strings.push: $text
+                            }
+                            else {
+                                %matches{$identity} := (my str @ = $text);
+                            }
+                        }
+                    }
+                }
+                $!matches := Map::Match.new: %matches;
+            }
+        }
     }
 
-    method river() {
+    method river(Ecosystem:D:) {
         $!river // $!meta-lock.protect: {
             $!river // do {
                 my %river;
@@ -554,10 +569,25 @@ class Ecosystem:ver<0.0.11>:auth<zef:lizmat> {
         }
     }
 
+    method unversioned-distro-names(Ecosystem:D:) {
+        %!identities.keys.grep({
+            version($_).whatever
+              && version(self.resolve(without-ver($_))).whatever
+        }).sort(*.fc)
+    }
+
     # Give CLI access to rendering using whatever JSON::Fast we have
-    method to-json(\data) is implementation-detail {
+    method to-json(Ecosystem: \data) is implementation-detail {
         use JSON::Fast;
         to-json data, :sorted-keys
+    }
+
+    method dependencies-from-meta(Ecosystem: %meta) {
+        dependencies-from-depends(%meta<depends>).Slip
+    }
+
+    method sort-identities(Ecosystem: @identities) {
+        sort-identities @identities
     }
 }
 
@@ -800,6 +830,22 @@ say "Found %identities.elems() identities";
 The C<identities> instance method returns a C<Map> keyed on identity string,
 with a C<Map> of the META information of that identity as the value.
 
+=head2 identity-dependencies
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+.say for $eco.identity-dependencies($identity);
+
+.say for $eco.identity-dependencies($identity, :all);
+
+=end code
+
+The C<identity-dependencies> instance method returns a sorted list of the
+dependencies of the given B<identity> string, if any.  Takes an optional
+C<:all> named to also return any dependencies of the initial dependencies,
+recursively.
+
 =head2 identity-release-Date
 
 =begin code :lang<raku>
@@ -1012,6 +1058,19 @@ that have this unresolvable dependency as the value.  By default,
 only current (as in the most recent version) identities will be
 in the list.  You can specify the named C<:all> argument to have
 also have the non-current identities listed.
+
+=head2 unversioned-distros
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say "Found $eco.unversioned-distro-names.elems() unversioned distributions";
+
+=end code
+
+The C<unversioned-distro-names> instance method returns a sorted list of
+distribution names (identity without C<:ver>) that do not have any
+release with a valid C<:ver> value (typically B<:ver<*>>).
 
 =head2 use-targets
 

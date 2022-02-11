@@ -1,4 +1,4 @@
-use Ecosystem:ver<0.0.11>:auth<zef:lizmat>;
+use Ecosystem:ver<0.0.12>:auth<zef:lizmat>;
 use Identity::Utils:ver<0.0.9>:auth<zef:lizmat>;
 
 sub meh($message) { exit note $message }
@@ -29,7 +29,7 @@ multi sub MAIN(
   Bool() :$verbose   = False,  #= whether to provide verbose info
 ) {
     eco($ecosystem);
-    say "$*PROGRAM-NAME v{ Ecosystem.^ver }";
+    say "Raku® Programming Language Ecosystem Inspector ($*PROGRAM.basename() v{ Ecosystem.^ver })";
     line;
     say "Ecosystem: %name{$ecosystem} ('$ecosystem' $eco.identities.elems() identities)";
     with $eco.least-recent-release -> $from {
@@ -39,8 +39,6 @@ multi sub MAIN(
     say " Meta-URL: $eco.meta-url()" if $verbose;
     line;
     say $help ?? qq:to/HELP/.chop !! "Extensive help available with --help";
-General Raku® Programming Language Ecosystem Inspector
-
 Allows introspection of all aspects of a Raku Ecosystem's Content Storage.
 
 Named arguments that are always available:
@@ -49,24 +47,25 @@ Named arguments that are always available:
   --verbose    boolean, show extended information, default: False
 
 Named arguments that are available in search and informational queries:
-  --ver        the :ver<> value to use, default: none
-  --auth       the :auth<> value to use, default: none
-  --api        the :api<> value to use, default: 0
-  --from       the :from<> value to use, default: Raku
+  --ver   the :ver<>  value to use, default: none
+  --auth  the :auth<> value to use, default: none
+  --api   the :api<>  value to use, default: 0
+  --from  the :from<> value to use, default: Raku
 
 Search queries (also looks in description):
-  us use-target <string>  use targets for optional string
-  di distro <string>      distribution names for optional string
-  i  identity <string>    identities for optional string
+  us  use-target <string>  use targets for optional string
+  di  distro <string>      distribution names for optional string
+  i   identity <string>    identities for optional string
 
 Informational queries:
-  de dependencies string          dependencies for given string
-  re reverse-dependencies string  reverse dependencies for given string
-  m  meta string key(s)           META information for given string
+  de  dependencies string          dependencies for given string
+  re  reverse-dependencies string  reverse dependencies for given string
+  m   meta string key(s)           META information for given string
 
 Other queries:
-  un unresolvable <--from>        unresolvable dependencies, include <:from>?
-  ri river <--top>                most referenced modules
+  ri  river <--top>          most referenced modules
+  unr unresolvable <--from>  unresolvable dependencies, include <:from>?
+  unv unversioned            distributions without valid version
 
 All subcommands can be shortened as long as they are unique.
 HELP
@@ -317,6 +316,22 @@ Add --verbose to see all unresolvable identities";
     }
     else {
         say "None";
+    }
+}
+
+multi sub MAIN("unversioned",
+  Str()  :$ecosystem = 'rea',  #= rea | fez | p6c | cpan
+  Bool() :$verbose   = False,  #= whether to provide verbose info
+) {
+    my @unversioned = eco($ecosystem).unversioned-distro-names;
+    say "@unversioned.elems() distributions without any release with a valid version";
+    if $verbose {
+        line;
+        .say for @unversioned;
+    }
+    else {
+        say "Add --verbose to list the distribution names";
+        line;
     }
 }
 
