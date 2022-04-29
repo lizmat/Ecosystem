@@ -9,6 +9,7 @@ is $eco.ecosystem, 'rea', 'is the ecosystem name ok';
 
 my $short-name := "eigenstates";
 my $auth     := "zef:lizmat";
+my $auth-url := "zef%3Alizmat";
 my $ver      := '0.0.9';
 my $identity := $short-name ~ ":ver<$ver>:auth<$auth>";
 
@@ -16,13 +17,14 @@ my $found := $eco.find-identities($short-name, :$ver, :$auth).head;
 is $found, $identity, 'is identity ok';
 
 is $eco.identity-url($identity),
-  "https://raw.githubusercontent.com/raku/REA/main/archive/E/eigenstates/eigenstates:ver\%3C$ver\%3E:auth\%3C$auth\%3E.tar.gz",
+  "https://raw.githubusercontent.com/raku/REA/main/archive/E/eigenstates/eigenstates%3Aver%3C$ver%3E%3Aauth%3C$auth-url%3E.tar.gz",
   'is identity-url ok?';
 
 is $eco.use-targets<eigenstates>.head, $identity,
   'is use-target ok?';
 
-is $eco.identity-url($identity), "https://raw.githubusercontent.com/raku/REA/main/archive/E/eigenstates/eigenstates:ver%3C0.0.9%3E:auth%3Czef:lizmat%3E.tar.gz",
+is $eco.identity-url($identity),
+  "https://raw.githubusercontent.com/raku/REA/main/archive/E/eigenstates/eigenstates%3Aver%3C0.0.9%3E%3Aauth%3C$auth-url%3E.tar.gz",
   'is distro-url ok?';
 
 is-deeply $eco.identity-release-Date($identity), Date.new(2021,12,2),

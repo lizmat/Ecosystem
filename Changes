@@ -2,6 +2,9 @@ Revision history for Ecosystem
 
 {{$NEXT}}
 
+0.0.14  2022-04-29T13:42:07+02:00
+    - Fix tests because of further URL-escaped URLs
+
 0.0.13  2022-02-11T15:20:34+01:00
     - Remove failing test
 
