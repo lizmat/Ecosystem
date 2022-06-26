@@ -25,7 +25,7 @@ Ecosystem provides the basic logic to accessing a Raku Ecosystem, defaulting to 
 COMMAND LINE INTERFACE
 ======================
 
-The `ecosystem` script provides a direct way to interrogate the contents of a given eco-system. Please see the usage information of the script for further information (use `--help` for extensive help).
+An `ecosystem` CLI script is provided by the [CLI::Ecosystem](https://raku.land/zef:lizmat/CLI::Ecosystem) distribution.
 
 CONSTRUCTOR ARGUMENTS
 =====================

@@ -1,8 +1,11 @@
 Revision history for Ecosystem
 
 {{$NEXT}}
+
+0.0.16  2022-06-26T13:14:38+02:00
     - Split off the CLI logic, this is now provided by the
       CLI::Ecosystem module
+    - Remove need for "SSL" support on MacOS in Github Actions
 
 0.0.15  2022-06-26T12:19:36+02:00
     - Add support for -V / --version arguments to CLI
