@@ -1,5 +1,5 @@
-use Ecosystem:ver<0.0.14>:auth<zef:lizmat>;
-use Identity::Utils:ver<0.0.9>:auth<zef:lizmat>;
+use Ecosystem;
+use Identity::Utils:ver<0.0.10>:auth<zef:lizmat>;
 
 sub meh($message) { exit note $message }
 sub line() { say "-" x 80 }
@@ -22,7 +22,7 @@ sub resolve($ecosystem, $needle, $ver, $auth, $api, $from) {
       $needle, :$ver, :$auth, :$api, :$from
 }
 
-proto sub MAIN(|c) is export {*}
+use CLI::Version $?DISTRIBUTION, proto sub MAIN(|) is export {*}
 multi sub MAIN(
   Bool() :$help      = False,  #= show this
   Str()  :$ecosystem = 'rea',  #= rea | fez | p6c | cpan

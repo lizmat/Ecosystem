@@ -2,6 +2,13 @@ Revision history for Ecosystem
 
 {{$NEXT}}
 
+0.0.15  2022-06-26T12:19:36+02:00
+    - Add support for -V / --version arguments to CLI
+    - Add dependency on CLI::Version
+    - Update dependency on Identity::Utils
+    - Add sponsor link
+    - Remove unnecessary named capture in proto
+
 0.0.14  2022-04-29T13:42:07+02:00
     - Fix tests because of further URL-escaped URLs
 
