@@ -1,6 +1,8 @@
 Revision history for Ecosystem
 
 {{$NEXT}}
+    - Split off the CLI logic, this is now provided by the
+      CLI::Ecosystem module
 
 0.0.15  2022-06-26T12:19:36+02:00
     - Add support for -V / --version arguments to CLI

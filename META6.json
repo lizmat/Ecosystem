@@ -9,17 +9,14 @@
     "JSON::Fast::Hyper:ver<0.0.3>:auth<zef:lizmat>",
     "Rakudo::CORE::META:ver<0.0.5+>:auth<zef:lizmat>",
     "Identity::Utils:ver<0.0.10>:auth<zef:lizmat>",
-    "Map::Match:ver<0.0.3>:auth<zef:lizmat>",
-    "shorten-sub-commands:ver<0.0.5>:auth<zef:lizmat>",
-    "CLI::Version:ver<0.0.1>:auth<zef:lizmat>"
+    "Map::Match:ver<0.0.3>:auth<zef:lizmat>"
   ],
   "description": "Accessing a Raku Ecosystem",
   "license": "Artistic-2.0",
   "name": "Ecosystem",
   "perl": "6.d",
   "provides": {
-    "Ecosystem": "lib/Ecosystem.rakumod",
-    "Ecosystem::CLI": "lib/Ecosystem/CLI.rakumod"
+    "Ecosystem": "lib/Ecosystem.rakumod"
   },
   "resources": [
   ],
@@ -31,5 +28,5 @@
   ],
   "test-depends": [
   ],
-  "version": "0.0.15"
+  "version": "0.0.16"
 }

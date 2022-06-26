@@ -12,7 +12,7 @@ constant %meta-url =
 
 my $store := ($*HOME // $*TMPDIR).add(".zef").add("store");
 
-class Ecosystem {
+class Ecosystem:ver<0.0.16>:auth<zef:lizmat> {
     has IO::Path $.IO;
     has Str $.meta-url;
     has Int $.stale-period is built(:bind) = 86400;
@@ -620,9 +620,8 @@ ecosystem master list and the distributions kept on CPAN).
 
 =head1 COMMAND LINE INTERFACE
 
-The C<ecosystem> script provides a direct way to interrogate the contents
-of a given eco-system.  Please see the usage information of the script
-for further information (use C<--help> for extensive help).
+An C<ecosystem> CLI script is provided by the
+L<CLI::Ecosystem|https://raku.land/zef:lizmat/CLI::Ecosystem> distribution.
 
 =head1 CONSTRUCTOR ARGUMENTS
 

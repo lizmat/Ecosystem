@@ -1,4 +1,0 @@
-my %*SUB-MAIN-OPTS = :named-anywhere;
-use Ecosystem::CLI:ver<0.0.15>:auth<zef:lizmat>;
-
-# vim: expandtab shiftwidth=4
