@@ -12,7 +12,7 @@ constant %meta-url =
 
 my $store := ($*HOME // $*TMPDIR).add(".zef").add("store");
 
-class Ecosystem:ver<0.0.16>:auth<zef:lizmat> {
+class Ecosystem:ver<0.0.17>:auth<zef:lizmat> {
     has IO::Path $.IO;
     has Str $.meta-url;
     has Int $.stale-period is built(:bind) = 86400;
@@ -30,7 +30,7 @@ class Ecosystem:ver<0.0.16>:auth<zef:lizmat> {
     has Date $!most-recent-release;
     has Lock $!meta-lock;
 
-    method TWEAK(Str:D :$ecosystem = 'rea') {
+    submethod TWEAK(Str:D :$ecosystem = 'rea') {
         without $!meta-url {
             if %meta-url{$ecosystem} -> $url {
                 $!meta-url := $url;
