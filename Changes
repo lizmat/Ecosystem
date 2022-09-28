@@ -2,6 +2,9 @@ Revision history for Ecosystem
 
 {{$NEXT}}
 
+0.0.18  2022-09-28T10:05:19+02:00
+    - Fix typo in dependency building, Nemokosch++ for spotting
+
 0.0.17  2022-09-27T16:24:57+02:00
     - Fix testing, borked because of eigenstates update
 

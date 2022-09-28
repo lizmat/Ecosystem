@@ -12,7 +12,7 @@ constant %meta-url =
 
 my $store := ($*HOME // $*TMPDIR).add(".zef").add("store");
 
-class Ecosystem:ver<0.0.17>:auth<zef:lizmat> {
+class Ecosystem:ver<0.0.18>:auth<zef:lizmat> {
     has IO::Path $.IO;
     has Str $.meta-url;
     has Int $.stale-period is built(:bind) = 86400;
@@ -383,7 +383,7 @@ class Ecosystem:ver<0.0.17>:auth<zef:lizmat> {
                 $requires.map: {
                     $_ ~~ Associative
                       ?? build .<name>, :ver(.<ver>), :auth(.<auth>),
-                           :api(.<api>), :from(.<from(>)
+                           :api(.<api>), :from(.<from>)
                       !! $_
                 } if $requires ~~ Positional;
             }
