@@ -12,7 +12,7 @@ constant %meta-url =
 
 my $store := ($*HOME // $*TMPDIR).add(".zef").add("store");
 
-class Ecosystem:ver<0.0.18>:auth<zef:lizmat> {
+class Ecosystem:ver<0.0.19>:auth<zef:lizmat> {
     has IO::Path $.IO;
     has Str $.meta-url;
     has Int $.stale-period is built(:bind) = 86400;
@@ -376,7 +376,7 @@ class Ecosystem:ver<0.0.18>:auth<zef:lizmat> {
     my multi sub dependencies-from-depends(Any:U $) { Empty }
     my multi sub dependencies-from-depends(Any:D $depends) {
         if $depends ~~ Positional {
-            $depends
+            $depends.grep({ $_ ~~ Str })
         }
         elsif $depends ~~ Associative {
             if $depends<runtime><requires> -> $requires {

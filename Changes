@@ -2,6 +2,10 @@ Revision history for Ecosystem
 
 {{$NEXT}}
 
+0.0.19  2022-11-18T19:54:19+01:00
+    - Handle garbage in some distributions' META information related
+      to "depends", which broke the .rver.  Spotted by Márton Polgár.
+
 0.0.18  2022-09-28T10:05:19+02:00
     - Fix typo in dependency building, Nemokosch++ for spotting
 
