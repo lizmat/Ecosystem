@@ -10,7 +10,7 @@ is $eco.ecosystem, 'rea', 'is the ecosystem name ok';
 my $short-name := "eigenstates";
 my $auth     := "zef:lizmat";
 my $auth-url := "zef%3Alizmat";
-my $ver      := '0.0.10';
+my $ver      := '0.0.11';
 my $identity := $short-name ~ ":ver<$ver>:auth<$auth>";
 
 my $found := $eco.find-identities($short-name, :$ver, :$auth).head;
@@ -27,9 +27,9 @@ is $eco.identity-url($identity),
   "https://raw.githubusercontent.com/raku/REA/main/archive/E/eigenstates/eigenstates%3Aver%3C$ver%3E%3Aauth%3C$auth-url%3E.tar.gz",
   'is distro-url ok?';
 
-is-deeply $eco.identity-release-Date($identity), Date.new(2022,7,29),
+is-deeply $eco.identity-release-Date($identity), Date.new(2024,6,24),
   'is identity-release-Date ok?';
-is-deeply $eco.identity-release-yyyy-mm-dd($identity), "2022-07-29",
+is-deeply $eco.identity-release-yyyy-mm-dd($identity), "2024-06-24",
   'is identity-release-yyyy-mm-dd ok?';
 
 is-deeply $eco.distros-of-use-target($short-name), ($short-name,),

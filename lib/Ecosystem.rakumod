@@ -1,7 +1,7 @@
-use JSON::Fast::Hyper:ver<0.0.3>:auth<zef:lizmat>;
-use Identity::Utils:ver<0.0.10>:auth<zef:lizmat>;
+use JSON::Fast::Hyper:ver<0.0.7>:auth<zef:lizmat>;
+use Identity::Utils:ver<0.0.11>:auth<zef:lizmat>;
 use Rakudo::CORE::META:auth<zef:lizmat>;
-use Map::Match:ver<0.0.3>:auth<zef:lizmat>;
+use Map::Match:ver<0.0.5>:auth<zef:lizmat>;
 
 constant %meta-url =
   p6c  => "https://raw.githubusercontent.com/ugexe/Perl6-ecosystems/master/p6c1.json",
@@ -12,7 +12,7 @@ constant %meta-url =
 
 my $store := ($*HOME // $*TMPDIR).add(".zef").add("store");
 
-class Ecosystem:ver<0.0.19>:auth<zef:lizmat> {
+class Ecosystem {
     has IO::Path $.IO;
     has Str $.meta-url;
     has Int $.stale-period is built(:bind) = 86400;
@@ -1097,7 +1097,7 @@ deal to me!
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2022 Elizabeth Mattijsen
+Copyright 2022, 2024 Elizabeth Mattijsen
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 
