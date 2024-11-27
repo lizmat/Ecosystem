@@ -382,7 +382,8 @@ class Ecosystem {
             if $depends<runtime><requires> -> $requires {
                 $requires.map: {
                     $_ ~~ Associative
-                      ?? build .<name>, :ver(.<ver>), :auth(.<auth>),
+                      ?? build .<name> // '',
+                           :ver(.<ver>), :auth(.<auth>),
                            :api(.<api>), :from(.<from>)
                       !! $_
                 } if $requires ~~ Positional;
