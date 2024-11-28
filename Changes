@@ -1,6 +1,8 @@
 Revision history for Ecosystem
 
 {{$NEXT}}
+
+0.0.21  2024-11-28T20:37:37+01:00
     - Guard against distributions without a "name" field
 
 0.0.20  2024-08-10T14:02:35+02:00
