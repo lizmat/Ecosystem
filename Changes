@@ -2,6 +2,9 @@ Revision history for Ecosystem
 
 {{$NEXT}}
 
+0.0.24  2024-11-29T18:45:30+01:00
+    - Allow regexes to be used with "identities"
+
 0.0.23  2024-11-29T16:02:11+01:00
     - Upped dependency on Map::Match to get ^ and $ anchor support
     - Upped other dependencies where possible and made them

@@ -277,7 +277,7 @@ class Ecosystem {
     method find-identities(Ecosystem:D:
       Any:D $needle = "", :$ver, :$auth, :$api, :$from, :$all
     ) {
-        if filter $needle
+        if filter $needle ~~ Regex || $needle
                     ?? self.matches{$needle}.map(*.Slip).unique
                     !! %!identities.keys,
                   $ver, $auth, $api, $from -> @identities {
