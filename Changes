@@ -2,6 +2,11 @@ Revision history for Ecosystem
 
 {{$NEXT}}
 
+0.0.23  2024-11-29T16:02:11+01:00
+    - Upped dependency on Map::Match to get ^ and $ anchor support
+    - Upped other dependencies where possible and made them
+      more lenient towards future versions
+
 0.0.22  2024-11-29T14:07:50+01:00
     - Allow "p6c" and "cpan" ecosystems to work again
     - Added "zef" as an alias for "fez" ecosystem storage

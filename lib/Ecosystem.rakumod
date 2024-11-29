@@ -1,7 +1,7 @@
-use JSON::Fast::Hyper:ver<0.0.7>:auth<zef:lizmat>;
-use Identity::Utils:ver<0.0.11>:auth<zef:lizmat>;
-use Rakudo::CORE::META:auth<zef:lizmat>;
-use Map::Match:ver<0.0.5>:auth<zef:lizmat>;
+use JSON::Fast::Hyper:ver<0.0.9+>:auth<zef:lizmat>;
+use Identity::Utils:ver<0.0.11+>:auth<zef:lizmat>;
+use Rakudo::CORE::META:ver<0.0.5+>:auth<zef:lizmat>;
+use Map::Match:ver<0.0.6+>:auth<zef:lizmat>;
 
 constant %meta-url = do {
     my %hash =
