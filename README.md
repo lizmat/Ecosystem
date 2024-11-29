@@ -3,7 +3,7 @@
 NAME
 ====
 
-Ecosystem - Accessing a Raku Ecosystem
+Ecosystem - Accessing a Raku Ecosystem Storage
 
 SYNOPSIS
 ========
@@ -25,7 +25,7 @@ Ecosystem provides the basic logic to accessing a Raku Ecosystem, defaulting to 
 COMMAND LINE INTERFACE
 ======================
 
-An `ecosystem` CLI script is provided by the [CLI::Ecosystem](https://raku.land/zef:lizmat/CLI::Ecosystem) distribution.
+An `ecosystems` interactive interface is provided by the [App::Ecosystems](https://raku.land/zef:lizmat/App::Ecosystems) distribution.
 
 CONSTRUCTOR ARGUMENTS
 =====================
@@ -75,6 +75,15 @@ my $eco = Ecosystem.new(stale-period => 3600);
 ```
 
 The `stale-period` named argument specifies the number of seconds after which the meta information is considered to be stale and needs updating using the `meta-url`. Defaults to `86400`, aka 1 day.
+
+longname
+--------
+
+```raku
+my $eco = Ecosystem.new(longname => 'My very own ecosystem storage';
+```
+
+The long name with which the ecosystem is to be known. Defaults to sensible name for the 4 original ecosystems: p6c cpan fez rea.
 
 CLASS METHODS
 =============
@@ -253,6 +262,16 @@ say $eco.least-recent-release;
 ```
 
 The `least-recent-release` instancemethod returns the `Date` of the least recent release in the ecosystem, if any.
+
+longname
+--------
+
+```raku
+my $eco = Ecosystem.new;
+say $eco.longname;  # Raku Ecosystem Archive
+```
+
+Return the long name of the ecosystem.
 
 matches
 -------

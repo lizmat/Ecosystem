@@ -1,0 +1,535 @@
+=begin pod
+
+=head1 NAME
+
+Ecosystem - Accessing a Raku Ecosystem Storage
+
+=head1 SYNOPSIS
+
+=begin code :lang<raku>
+
+use Ecosystem;
+
+my $eco = Ecosystem.new;  # access the REA ecosystem
+
+say "Ecosystem has $eco.identities.elems() identities:";
+.say for $eco.identities.keys.sort;
+
+=end code
+
+=head1 DESCRIPTION
+
+Ecosystem provides the basic logic to accessing a Raku Ecosystem,
+defaulting to the Raku Ecosystem Archive, a place where (almost) every
+distribution ever available in the Raku Ecosystem, can be obtained
+even after it has been removed (specifically in the case of the old
+ecosystem master list and the distributions kept on CPAN).
+
+=head1 COMMAND LINE INTERFACE
+
+An C<ecosystems> interactive interface is provided by the
+L<App::Ecosystems|https://raku.land/zef:lizmat/App::Ecosystems> distribution.
+
+=head1 CONSTRUCTOR ARGUMENTS
+
+=head2 ecosystem
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new(:ecosystem<fez>);
+
+=end code
+
+The C<ecosystem> named argument is string that indicates which ecosystem
+(content-storage) should be used: it basically is a preset for the
+C<meta-url> and C<IO> arguments.  The following names are recognized:
+
+=item p6c  the original content storage / ecosystem
+=item cpan the content storage that uses CPAN
+=item fez  the zef (fez) ecosystem
+=item rea  the Raku Ecosystem Archive (default)
+
+If this argument is not specified, then at least the C<IO> named argument
+must be specified.
+
+=head2 IO
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new(IO => "path".IO);
+
+=end code
+
+The C<IO> named argument specifies the path of the file that contains
+/ will contain the META information.  If not specified, will default
+to whatever can be determined from the other arguments.
+
+=head2 meta-url
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new(meta-url => "https://foo.bar/META.json");
+
+=end code
+
+The C<meta-url> named argument specifies the URL that should be used to
+obtain the META information if it is not available locally yet, or if
+it has been determined to be stale.  Will default to whatever can be
+determined from the other arguments.  If specified, then the C<IO>
+arguments B<must> also be specified to store the meta information in.
+
+=head2 stale-period
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new(stale-period => 3600);
+
+=end code
+
+The C<stale-period> named argument specifies the number of seconds
+after which the meta information is considered to be stale and needs
+updating using the C<meta-url>.  Defaults to C<86400>, aka 1 day.
+
+=head2 longname
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new(longname => 'My very own ecosystem storage';
+
+=end code
+
+The long name with which the ecosystem is to be known.  Defaults to
+sensible name for the 4 original ecosystems: p6c cpan fez rea.
+
+=head1 CLASS METHODS
+
+=head2 dependencies-from-meta
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+.say for $eco.dependencies-from-meta(from-json $io.slurp);
+
+=end code
+
+The C<dependencies-from-meta> class method returns the list of C<use-targets>
+as specified in the C<depends> field of the given hash with meta information.
+
+=head2 sort-identities
+
+=begin code :lang<raku>
+
+.say for Ecosystem.sort-identities(@identities);
+
+=end code
+
+The C<sort-identities> class method sorts the given identities with
+the highest version first, and then by the C<short-name> of the
+identity.
+
+=head1 INSTANCE METHODS
+
+=head2 dependencies
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+.say for $eco.dependencies("Ecosystem");
+
+=end code
+
+The C<dependencies> instance method returns a sorted list of all
+C<use-target>s (either directly or recursively) for an C<identity>,
+C<use-target> or C<distro-name>.
+
+=head2 distro-names
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say "Found $eco.distro-names.elems() differently named distributions";
+
+=end code
+
+The C<distro-names> instance method returns a C<Map> keyed on distribution
+name, with a sorted list of the identities that have that distribution
+name (sorted by short-name, latest version first).
+
+=head2 distros-of-use-target
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+.say for $eco.distros-of-use-target($target);
+
+=end code
+
+The C<distro-of-use-target> instance method the names of the distributions
+that provide the given use target.
+
+=head2 ecosystem
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say "The ecosystem is $_" with $eco.ecosystem;
+
+=end code
+
+The C<ecosystem> instance method returns the value (implicitely) specified
+with the C<:ecosystem> named argument.
+
+=head2 find-distro-names
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+.say for $eco.find-distro-names: / JSON /;
+
+.say for $eco.find-distro-names: :auth<zef:lizmat>;
+
+=end code
+
+The C<find-distro-names> instance method returns the distribution names
+that match the optional given string or regular expression, potentially
+filtered by a C<:ver>, C<:auth>, C<:api> and/or C<:from> value.
+
+=head2 find-identities
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+.say for $eco.find-identities: / Utils /, :ver<0.0.3+>, :auth<zef:lizmat>;
+
+.say for $eco.find-identities: :auth<zef:lizmat>, :all;
+
+=end code
+
+The C<find-identities> method returns identities (sorted by short-name,
+latest version first) that match the optional given string or regular
+expression, potentially filtered by C<:ver>, C<:auth>, C<:api> and/or
+C<:from> value.
+
+The specified string is looked up / regular expression is matched in
+the distribution names, the use-targets and the descriptions of the
+distributions.
+
+By default, only the identity with the highest C<:ver> value will be
+returned: a C<:all> flag can be specified to return B<all> possible
+identities.
+
+=head2 find-use-targets
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+.say for $eco.find-use-targets: / JSON /;
+
+.say for $eco.find-use-targets: :auth<zef:lizmat>;
+
+=end code
+
+The C<find-use-targets> instance method returns the strings that can be
+used in a C<use> command that match the optional given string or regular
+expression, potentially filtered by a C<:ver>, C<:auth>, C<:api> and/or
+C<:from> value.
+
+=head2 identities
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+my %identities := $eco.identities;
+say "Found %identities.elems() identities";
+
+=end code
+
+The C<identities> instance method returns a C<Map> keyed on identity string,
+with a C<Map> of the META information of that identity as the value.
+
+=head2 identity-dependencies
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+.say for $eco.identity-dependencies($identity);
+
+.say for $eco.identity-dependencies($identity, :all);
+
+=end code
+
+The C<identity-dependencies> instance method returns a sorted list of the
+dependencies of the given B<identity> string, if any.  Takes an optional
+C<:all> named to also return any dependencies of the initial dependencies,
+recursively.
+
+=head2 identity-release-Date
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say $eco.identity-release-Date($identity);
+
+=end code
+
+The C<identity-release-Date> instance method returns the C<Date> when the
+the distribution of the given identity string was released, or C<Nil> if
+either the identity could not be found, or if there is no release date
+information available.
+
+=head2 identity-release-yyyy-mm-dd
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say $eco.identity-release-yyyy-mm-dd($identity);
+
+=end code
+
+The C<identity-release-yyyy-mm-dd> instance method returns a C<Str> in
+YYYY-MM-DD format of when the the distribution of the given identity string
+was released, or C<Nil> if either the identity could not be found, or if
+there is no release date information available.
+
+=head2 identity-url
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say $eco.identity-url($identity);
+
+=end code
+
+The C<identity-url> instance method returns the C<URL> of the distribution
+file associated with the given identity string, or C<Nil>.
+
+=head2 IO
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new(:IO("foobar.json").IO);
+say $eco.IO;  # "foobar.json".IO
+
+=end code
+
+The C<IO> instance method returns the C<IO::Path> object of the file where
+the local copy of the META data lives.
+
+=head2 least-recent-release
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say $eco.least-recent-release;
+
+=end code
+
+The C<least-recent-release> instancemethod returns the C<Date> of the
+least recent release in the ecosystem, if any.
+
+=head2 longname
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say $eco.longname;  # Raku Ecosystem Archive
+
+=end code
+
+Return the long name of the ecosystem.
+
+=head2 matches
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+.say for $eco.matches{ / Utils / };
+
+=end code
+
+The C<matches> instance method returns a
+L<Map::Match|https://raku.land/zef:lizmat/Map::Match> with the
+string that caused addition of an identity as the key, and a
+sorted list of the identities that either matched the distribution
+name or the description (sorted by short-name, latest version first).
+It is basically the workhorse of the L<find-identities|#find-identities>
+method.
+
+=head2 meta
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say $eco.meta;  # ...
+
+=end code
+
+The C<meta> instance method returns the JSON representation of the
+META data.
+
+=head2 meta-url
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new(:ecosystem<fez>);
+say $eco.meta-url;  # https://360.zef.pm/
+
+=end code
+
+The C<meta-url> instance method returns the URL that is used to
+fetch the META data, if any.
+
+=head2 most-recent-release
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say $eco.most-recent-release;
+
+=end code
+
+The C<most-recent-release> instance method returns the C<Date>
+of the most recent release in the ecosystem, if any.
+
+=head2 resolve
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say $eco.resolve("eigenstates");  # eigenstates:ver<0.0.9>:auth<zef:lizmat>
+
+=end code
+
+The C<resolve> instance method attempts to resolve the given string and the
+given C<:ver>, C<:auth>, C<:api> and C<:from> named arguments to the
+identity that would be assumed when specified with e.g. C<dependencies>.
+
+=head2 reverse-dependencies
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+my %reverse-dependencies := $eco.reverse-dependencies;
+say "Found %reverse-dependencies.elems() reverse dependencies";
+
+=end code
+
+The C<reverse-dependencies> instance method returns a C<Map> keyed on
+resolved dependencies, with a list of identities that depend on it.
+
+=head2 reverse-dependencies-for-short-name
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+.say for $eco.reverse-dependencies-for-short-name("File::Temp");
+
+=end code
+
+The C<reverse-dependencies-for-short-name> instance method returns
+a unique list of short-names of identities that depend on any
+version of the given short-name.
+
+=head2 river
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say "Top five modules on the Raku Ecosystem River:";
+.say for $eco.river.sort(-*.value.elems).map(*.key).head(5);
+
+=end code
+
+The C<river> instance method returns a C<Map> keyed on short-name of an
+identity, with as value a list of short-names of identities that depend
+on it B<without> having pinned C<:ver> and C<:auth> in their dependency
+specification.
+
+=head2 stale-period
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say $eco.stale-period;  # 86400
+
+=end code
+
+The C<stale-period> instance method returns the number of seconds
+after which any locally stored META information is considered to
+be stale.
+
+=head2 update
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+$eco.update;
+
+=end code
+
+The C<update> instance method re-fetches the META information from
+the C<meta-url> and updates it internal state in a thread-safe
+manner.
+
+=head2 unresolvable-dependencies
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say "Found $eco.unresolvable-dependencies.elems() unresolvable dependencies";
+
+=end code
+
+The C<unresolvable-dependencies> instance method returns a C<Map>
+keyed on an unresolved dependency, and a C<List> of identities
+that have this unresolvable dependency as the value.  By default,
+only current (as in the most recent version) identities will be
+in the list.  You can specify the named C<:all> argument to have
+also have the non-current identities listed.
+
+=head2 unversioned-distros
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say "Found $eco.unversioned-distro-names.elems() unversioned distributions";
+
+=end code
+
+The C<unversioned-distro-names> instance method returns a sorted list of
+distribution names (identity without C<:ver>) that do not have any
+release with a valid C<:ver> value (typically B<:ver<*>>).
+
+=head2 use-targets
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+say "Found $eco.use-targets.elems() different 'use' targets";
+
+=end code
+
+The C<use-targets> instance method returns a C<Map> keyed on 'use'
+target, with a sorted list of the identities that provide that
+'use' target (sorted by short-name, latest version first).
+
+=head1 AUTHOR
+
+Elizabeth Mattijsen <liz@raku.rocks>
+
+Source can be located at: https://github.com/lizmat/Ecosystem .
+Comments and Pull Requests are welcome.
+
+If you like this module, or what I’m doing more generally, committing to a
+L<small sponsorship|https://github.com/sponsors/lizmat/>  would mean a great
+deal to me!
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2022, 2024 Elizabeth Mattijsen
+
+This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
+
+=end pod
+
+# vim: expandtab shiftwidth=4
