@@ -37,6 +37,8 @@ class Ecosystem {
     has %.identities    is built(False);
     has %.distro-names  is built(False);
     has %.use-targets   is built(False);
+    has %.authors       is built(False);
+    has %.tags          is built(False);
     has $!matches;
     has $!reverse-dependencies;
     has $!all-unresolvable-dependencies;
@@ -195,6 +197,8 @@ class Ecosystem {
         my %distro-names;
         my %use-targets;
         my %descriptions;
+        my %authors;
+        my %tags;
 
         with %Rakudo::CORE::META -> %meta {
             my $name     := %meta<name>;
@@ -217,6 +221,15 @@ class Ecosystem {
                         add-identity %use-targets, $_, $identity
                           for %provides.keys;
                     }
+                    if %meta<tags> -> @tags {
+                        add-identity %tags, $_, $identity for @tags;
+                    }
+                    if %meta<author> -> $author {
+                        add-identity %authors, $_, $identity for $author<>;
+                    }
+                    if %meta<authors> -> $authors {
+                        add-identity %authors, $_, $identity for $authors<>;
+                    }
                 }
             }
         }
@@ -230,6 +243,8 @@ class Ecosystem {
         %!identities   := %identities.Map;
         %!distro-names := %distro-names.Map;
         %!use-targets  := %use-targets.Map;
+        %!authors      := Map::Match.new(%authors);
+        %!tags         := Map::Match.new(%tags);
 
         # reset all dependent data structures
         $!least-recent-release = $!most-recent-release = Nil;
@@ -262,6 +277,10 @@ class Ecosystem {
                   !! { version($_) == $version }
             }
         }
+        else {
+            my $version := '0.0.1+'.Version;
+            &ver-matches = { version($_) ~~ $version }
+        }
 
         @identities.grep: {
             (!$from-needle || .contains($from-needle))
@@ -277,14 +296,29 @@ class Ecosystem {
     method find-identities(Ecosystem:D:
       Any:D $needle = "", :$ver, :$auth, :$api, :$from, :$all
     ) {
-        if filter $needle ~~ Regex || $needle
+        if filter($needle ~~ Regex || $needle
                     ?? self.matches{$needle}.map(*.Slip).unique
                     !! %!identities.keys,
-                  $ver, $auth, $api, $from -> @identities {
+                  $ver, $auth, $api, $from) -> @identities {
             my %seen;
             sort-identities $all
               ?? @identities
               !! @identities.map: { $_ unless %seen{short-name($_)}++ }
+        }
+    }
+
+    method find-no-tags(Ecosystem:D:
+      Any:D $needle = "", :$ver, :$auth, :$api, :$from, :$all
+    ) {
+        my %identities := %!identities;
+        if filter($needle ~~ Regex || $needle
+                    ?? self.matches{$needle}.map(*.Slip).unique
+                    !! %identities.keys,
+                  $ver, $auth, $api, $from) -> @identities {
+            my %seen;
+            sort-identities @identities.grep: $all
+              ?? { !%identities{$_}<tags> }
+              !! { !%seen{short-name $_}++ && !%identities{$_}<tags> }
         }
     }
 
@@ -543,14 +577,14 @@ class Ecosystem {
                             %matches{$key} := (my str @ = @additional);
                         }
                     }
-                    for %!identities.kv -> $identity, %meta {
-                        if %meta<description> -> $text {
-                            if %matches{$identity} -> @strings {
-                                @strings.push: $text
-                            }
-                            else {
-                                %matches{$identity} := (my str @ = $text);
-                            }
+                }
+                for %!identities.kv -> $identity, %meta {
+                    if %meta<description> -> $text {
+                        if %matches{$identity} -> @strings {
+                            @strings.push: $text
+                        }
+                        else {
+                            %matches{$identity} := (my str @ = $text);
                         }
                     }
                 }

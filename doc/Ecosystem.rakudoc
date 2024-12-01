@@ -129,6 +129,20 @@ identity.
 
 =head1 INSTANCE METHODS
 
+=head2 authors
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+.say for $eco.authors{ / eigenstates / }
+
+=end code
+
+The C<authors> instance method returns a
+L<Map::Match|https://raku.land/zef:lizmat/Map::Match> with the
+authors found in each distribution as the keys, and all of the
+identities each author was found in as the value.
+
 =head2 dependencies
 
 =begin code :lang<raku>
@@ -217,6 +231,32 @@ distributions.
 By default, only the identity with the highest C<:ver> value will be
 returned: a C<:all> flag can be specified to return B<all> possible
 identities.
+
+=head2 find-no-tags
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+.say for $eco.find-no-tags;
+
+.say for $eco.find-no-tags: / zef /;
+
+.say for $eco.find-no-tags: / zef / :all;
+
+=end code
+
+The C<find-no-tags> method returns identities (sorted by short-name,
+latest version first) that match the optional given string or regular
+expression (potentially filtered by C<:ver>, C<:auth>, C<:api> and/or
+C<:from> value) that do B<not> have any tags specified.
+
+The specified string is looked up / regular expression is matched in
+the distribution names, the use-targets and the descriptions of the
+distributions.
+
+By default, only the identity with the highest C<:ver> value will be
+returned: a C<:all> flag can be specified to return B<all> possible
+identities that do B<not> have tags.
 
 =head2 find-use-targets
 
@@ -343,7 +383,7 @@ Return the long name of the ecosystem.
 =begin code :lang<raku>
 
 my $eco = Ecosystem.new;
-.say for $eco.matches{ / Utils / };
+.say for $eco.matches{ / Utils / }
 
 =end code
 
@@ -457,6 +497,20 @@ say $eco.stale-period;  # 86400
 The C<stale-period> instance method returns the number of seconds
 after which any locally stored META information is considered to
 be stale.
+
+=head2 tags
+
+=begin code :lang<raku>
+
+my $eco = Ecosystem.new;
+.say for $eco.tags{ / eigenstates / }
+
+=end code
+
+The C<tags> instance method returns a
+L<Map::Match|https://raku.land/zef:lizmat/Map::Match> with the
+tags found in each distribution as the keys, and all of the
+identities each tag was found in as the value.
 
 =head2 update
 

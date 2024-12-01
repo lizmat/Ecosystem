@@ -110,6 +110,16 @@ The `sort-identities` class method sorts the given identities with the highest v
 INSTANCE METHODS
 ================
 
+authors
+-------
+
+```raku
+my $eco = Ecosystem.new;
+.say for $eco.authors{ / eigenstates / }
+```
+
+The `authors` instance method returns a [Map::Match](https://raku.land/zef:lizmat/Map::Match) with the authors found in each distribution as the keys, and all of the identities each author was found in as the value.
+
 dependencies
 ------------
 
@@ -177,6 +187,24 @@ The `find-identities` method returns identities (sorted by short-name, latest ve
 The specified string is looked up / regular expression is matched in the distribution names, the use-targets and the descriptions of the distributions.
 
 By default, only the identity with the highest `:ver` value will be returned: a `:all` flag can be specified to return **all** possible identities.
+
+find-no-tags
+------------
+
+```raku
+my $eco = Ecosystem.new;
+.say for $eco.find-no-tags;
+
+.say for $eco.find-no-tags: / zef /;
+
+.say for $eco.find-no-tags: / zef / :all;
+```
+
+The `find-no-tags` method returns identities (sorted by short-name, latest version first) that match the optional given string or regular expression (potentially filtered by `:ver`, `:auth`, `:api` and/or `:from` value) that do **not** have any tags specified.
+
+The specified string is looked up / regular expression is matched in the distribution names, the use-targets and the descriptions of the distributions.
+
+By default, only the identity with the highest `:ver` value will be returned: a `:all` flag can be specified to return **all** possible identities that do **not** have tags.
 
 find-use-targets
 ----------------
@@ -278,7 +306,7 @@ matches
 
 ```raku
 my $eco = Ecosystem.new;
-.say for $eco.matches{ / Utils / };
+.say for $eco.matches{ / Utils / }
 ```
 
 The `matches` instance method returns a [Map::Match](https://raku.land/zef:lizmat/Map::Match) with the string that caused addition of an identity as the key, and a sorted list of the identities that either matched the distribution name or the description (sorted by short-name, latest version first). It is basically the workhorse of the [find-identities](#find-identities) method.
@@ -364,6 +392,16 @@ say $eco.stale-period;  # 86400
 ```
 
 The `stale-period` instance method returns the number of seconds after which any locally stored META information is considered to be stale.
+
+tags
+----
+
+```raku
+my $eco = Ecosystem.new;
+.say for $eco.tags{ / eigenstates / }
+```
+
+The `tags` instance method returns a [Map::Match](https://raku.land/zef:lizmat/Map::Match) with the tags found in each distribution as the keys, and all of the identities each tag was found in as the value.
 
 update
 ------

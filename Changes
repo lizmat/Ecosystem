@@ -2,6 +2,12 @@ Revision history for Ecosystem
 
 {{$NEXT}}
 
+0.0.25  2024-12-01T20:51:32+01:00
+    - Make sure that "identities" only returns identities, and
+      not also the descriptions that match the search string
+    - Added support for "find-no-tags", "tags" and "authors"
+      methods
+
 0.0.24  2024-11-29T18:45:30+01:00
     - Allow regexes to be used with "identities"
 

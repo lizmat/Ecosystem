@@ -1,7 +1,7 @@
 use Test;
 use Ecosystem;
 
-plan 12;
+plan 15;
 
 my $eco := Ecosystem.new;
 isa-ok $eco, Ecosystem;
@@ -41,5 +41,12 @@ isa-ok $eco.most-recent-release, Date,
   'is most-recent-release a Date?';
 
 is $eco.resolve("eigenstates"), $identity, 'is resolve ok?';
+
+is-deeply $eco.find-no-tags("eigenstates"), (), 'eigenstates has tags';
+
+is $eco.tags<eigenstates>.head.head, $identity, 'found the EIGENSTATES tag';
+
+ok $identity (elem) $eco.authors<mattijsen>.head<>,
+  'found the author';
 
 # vim: expandtab shiftwidth=4
