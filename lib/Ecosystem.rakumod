@@ -1,7 +1,7 @@
 use JSON::Fast::Hyper:ver<0.0.9+>:auth<zef:lizmat>;
 use Identity::Utils:ver<0.0.11+>:auth<zef:lizmat>;
 use Rakudo::CORE::META:ver<0.0.5+>:auth<zef:lizmat>;
-use Map::Match:ver<0.0.6+>:auth<zef:lizmat>;
+use Map::Match:ver<0.0.7+>:auth<zef:lizmat>;
 
 constant %meta-url = do {
     my %hash =
@@ -222,7 +222,7 @@ class Ecosystem {
                           for %provides.keys;
                     }
                     if %meta<tags> -> @tags {
-                        add-identity %tags, $_, $identity for @tags;
+                        add-identity %tags, .uc, $identity for @tags;
                     }
                     if %meta<author> -> $author {
                         add-identity %authors, $_, $identity for $author<>;
@@ -621,6 +621,13 @@ class Ecosystem {
             }
         }
     }
+
+    # Provide interface method so that callers don't need to do an
+    # an additional () to get the Map::Match object
+    multi method authors()   { %!authors     }
+    multi method authors(|c) { %!authors(|c) }
+    multi method tags()      { %!tags        }
+    multi method tags(|c)    { %!tags(|c)    }
 
     method unversioned-distro-names(Ecosystem:D:) {
         %!identities.keys.grep({
