@@ -2,6 +2,10 @@ Revision history for Ecosystem
 
 {{$NEXT}}
 
+0.0.27  2024-12-04T11:34:16+01:00
+    - Added support for "auths" method
+    - Fixed issue with the "update" method
+
 0.0.26  2024-12-03T14:18:18+01:00
     - Upped dependency on Map::Match to get direct call support
     - Allow "authors" and "tags" methods to be called with arguments

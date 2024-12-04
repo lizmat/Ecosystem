@@ -38,6 +38,7 @@ class Ecosystem {
     has %.distro-names  is built(False);
     has %.use-targets   is built(False);
     has %.authors       is built(False);
+    has %.auths         is built(False);
     has %.tags          is built(False);
     has $!matches;
     has $!reverse-dependencies;
@@ -198,6 +199,7 @@ class Ecosystem {
         my %use-targets;
         my %descriptions;
         my %authors;
+        my %auths;
         my %tags;
 
         with %Rakudo::CORE::META -> %meta {
@@ -221,14 +223,17 @@ class Ecosystem {
                         add-identity %use-targets, $_, $identity
                           for %provides.keys;
                     }
-                    if %meta<tags> -> @tags {
-                        add-identity %tags, .uc, $identity for @tags;
-                    }
                     if %meta<author> -> $author {
                         add-identity %authors, $_, $identity for $author<>;
                     }
                     if %meta<authors> -> $authors {
                         add-identity %authors, $_, $identity for $authors<>;
+                    }
+                    if %meta<auth> -> $auth {
+                        add-identity %auths, $auth, $identity;
+                    }
+                    if %meta<tags> -> $tags {
+                        add-identity %tags, .uc, $identity for $tags<>;
                     }
                 }
             }
@@ -243,6 +248,7 @@ class Ecosystem {
         %!identities   := %identities.Map;
         %!distro-names := %distro-names.Map;
         %!use-targets  := %use-targets.Map;
+        %!auths        := Map::Match.new(%auths);
         %!authors      := Map::Match.new(%authors);
         %!tags         := Map::Match.new(%tags);
 
@@ -394,8 +400,8 @@ class Ecosystem {
                 $_ with %_<release-date>
             }).minmax;
             if $range.min ~~ Str {
-                $!least-recent-release := $range.min.Date;
-                $!most-recent-release  := $range.max.Date;
+                $!least-recent-release = $range.min.Date;
+                $!most-recent-release  = $range.max.Date;
             }
         }
     }
@@ -626,6 +632,8 @@ class Ecosystem {
     # an additional () to get the Map::Match object
     multi method authors()   { %!authors     }
     multi method authors(|c) { %!authors(|c) }
+    multi method auths()     { %!auths       }
+    multi method auths(|c)   { %!auths(|c)   }
     multi method tags()      { %!tags        }
     multi method tags(|c)    { %!tags(|c)    }
 
