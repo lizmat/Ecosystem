@@ -37,6 +37,7 @@ class Ecosystem {
     has %.identities    is built(False);
     has %.distro-names  is built(False);
     has %.use-targets   is built(False);
+    has %.release-dates is built(False);
     has %.authors       is built(False);
     has %.auths         is built(False);
     has %.tags          is built(False);
@@ -201,6 +202,7 @@ class Ecosystem {
         my %authors;
         my %auths;
         my %tags;
+        my %release-dates;
 
         with %Rakudo::CORE::META -> %meta {
             my $name     := %meta<name>;
@@ -235,6 +237,9 @@ class Ecosystem {
                     if %meta<tags> -> $tags {
                         add-identity %tags, .uc, $identity for $tags<>;
                     }
+                    if %meta<release-date> -> $release-date {
+                        add-identity %release-dates, $release-date, $identity;
+                    }
                 }
             }
         }
@@ -245,12 +250,13 @@ class Ecosystem {
             }
         }
 
-        %!identities   := %identities.Map;
-        %!distro-names := %distro-names.Map;
-        %!use-targets  := %use-targets.Map;
-        %!auths        := Map::Match.new(%auths);
-        %!authors      := Map::Match.new(%authors);
-        %!tags         := Map::Match.new(%tags);
+        %!identities    := %identities.Map;
+        %!distro-names  := %distro-names.Map;
+        %!use-targets   := %use-targets.Map;
+        %!release-dates := Map::Match.new(%release-dates);
+        %!auths         := Map::Match.new(%auths);
+        %!authors       := Map::Match.new(%authors);
+        %!tags          := Map::Match.new(%tags);
 
         # reset all dependent data structures
         $!least-recent-release = $!most-recent-release = Nil;
@@ -630,12 +636,14 @@ class Ecosystem {
 
     # Provide interface method so that callers don't need to do an
     # an additional () to get the Map::Match object
-    multi method authors()   { %!authors     }
-    multi method authors(|c) { %!authors(|c) }
-    multi method auths()     { %!auths       }
-    multi method auths(|c)   { %!auths(|c)   }
-    multi method tags()      { %!tags        }
-    multi method tags(|c)    { %!tags(|c)    }
+    multi method authors()         { %!authors           }
+    multi method authors(|c)       { %!authors(|c)       }
+    multi method auths()           { %!auths             }
+    multi method auths(|c)         { %!auths(|c)         }
+    multi method release-dates()   { %!release-dates     }
+    multi method release-dates(|c) { %!release-dates(|c) }
+    multi method tags()            { %!tags              }
+    multi method tags(|c)          { %!tags(|c)          }
 
     method unversioned-distro-names(Ecosystem:D:) {
         %!identities.keys.grep({

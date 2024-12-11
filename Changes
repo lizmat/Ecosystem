@@ -2,6 +2,9 @@ Revision history for Ecosystem
 
 {{$NEXT}}
 
+0.0.28  2024-12-11T14:47:26+01:00
+    - Add support for "release-dates" method
+
 0.0.27  2024-12-04T11:34:16+01:00
     - Added support for "auths" method
     - Fixed issue with the "update" method

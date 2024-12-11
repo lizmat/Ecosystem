@@ -1,7 +1,7 @@
 use Test;
 use Ecosystem;
 
-plan 15;
+plan 16;
 
 my $eco := Ecosystem.new;
 isa-ok $eco, Ecosystem;
@@ -48,5 +48,8 @@ is $eco.tags<eigenstates>.head.head, $identity, 'found the EIGENSTATES tag';
 
 ok $identity (elem) $eco.authors<mattijsen>.head<>,
   'found the author';
+
+is $eco.release-dates("2024-06-24").head.tail, $identity,
+  'found the release by date';
 
 # vim: expandtab shiftwidth=4

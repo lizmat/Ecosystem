@@ -393,6 +393,16 @@ say $eco.stale-period;  # 86400
 
 The `stale-period` instance method returns the number of seconds after which any locally stored META information is considered to be stale.
 
+release-dates
+-------------
+
+```raku
+my $eco = Ecosystem.new;
+.say for $eco.release-dates{ / ^2024 / }
+```
+
+The `release-dates` instance method returns a [Map::Match](https://raku.land/zef:lizmat/Map::Match) with the release-dates (YYYY-MM-DD) found in each distribution as the keys, and all of the identities that were released on that date as the value.
+
 tags
 ----
 
