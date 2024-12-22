@@ -214,6 +214,25 @@ class Ecosystem {
               for %meta<provides>.keys;
         }
 
+        my sub mangle-names(\source) {
+            source<>.map: {
+                my $name := .trim
+                  .subst(/ \s+ <[<(\,]> .* /)
+                  .subst(/ \s+ aka \s+ .* /)
+                  .subst(/ <[\w.-]>+ '@' <[\w.]>+ /)
+                  .subst(/ \s+ "'" \w+ "'" /)
+                  .subst(/ \s+ '"' \w+ '"' /)
+                  .subst(/ \s+ '«' \w+ '»' /)
+                  .subst(/ \s+ '‘' \w+ '’' /)
+                  .subst(/ \s+ '“' \w+ '”' /);
+
+                $name.contains("raku community", :i)
+                  ?? 'Raku Community'
+                  !! $name
+            }
+        }
+
+        my $REA := $!ecosystem eq 'rea';
         for from-json($!meta) -> %meta {
             if %meta<name> -> $name {
                 if %meta<dist>
@@ -226,10 +245,12 @@ class Ecosystem {
                           for %provides.keys;
                     }
                     if %meta<author> -> $author {
-                        add-identity %authors, $_, $identity for $author<>;
+                        add-identity %authors, $_, $identity
+                          for mangle-names($author);
                     }
                     if %meta<authors> -> $authors {
-                        add-identity %authors, $_, $identity for $authors<>;
+                        add-identity %authors, $_, $identity
+                          for mangle-names($authors);
                     }
                     if %meta<auth> -> $auth {
                         add-identity %auths, $auth, $identity;
@@ -237,9 +258,11 @@ class Ecosystem {
                     if %meta<tags> -> $tags {
                         add-identity %tags, .uc, $identity for $tags<>;
                     }
-                    if %meta<release-date> -> $release-date {
-                        add-identity %release-dates, $release-date, $identity;
-                    }
+                    add-identity(
+                      %release-dates,
+                      %meta<release-date> // 'unknown',
+                      $identity
+                    ) if $REA;
                 }
             }
         }
@@ -646,9 +669,16 @@ class Ecosystem {
     multi method tags(|c)          { %!tags(|c)          }
 
     method unversioned-distro-names(Ecosystem:D:) {
-        %!identities.keys.grep({
-            version($_).whatever
-              && version(self.resolve(without-ver($_))).whatever
+        %!identities.keys.grep(-> $identity {
+            CATCH { say "$identity crashed" }
+            if version($identity).whatever {
+                if self.resolve(short-name($identity)) -> $newer {
+                    version($newer).whatever
+                }
+                else {
+                    True
+                }
+            }
         }).sort(*.fc)
     }
 
