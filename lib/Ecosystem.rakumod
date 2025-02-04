@@ -1,9 +1,10 @@
 use JSON::Fast::Hyper:ver<0.0.9+>:auth<zef:lizmat>;
-use Identity::Utils:ver<0.0.11+>:auth<zef:lizmat>;
-use Rakudo::CORE::META:ver<0.0.5+>:auth<zef:lizmat>;
-use Map::Match:ver<0.0.7+>:auth<zef:lizmat>;
+use Identity::Utils:ver<0.0.18+>:auth<zef:lizmat>
+  <api auth build from short-name is-pinned ver version>;
+use Rakudo::CORE::META:ver<0.0.9+>:auth<zef:lizmat>;
+use Map::Match:ver<0.0.8+>:auth<zef:lizmat>;
 
-constant %meta-url = do {
+my constant %meta-url = do {
     my %hash =
       p6c  => "https://raw.githubusercontent.com/ugexe/Perl6-ecosystems/master/p6c1.json",
       cpan => "https://raw.githubusercontent.com/ugexe/Perl6-ecosystems/master/cpan1.json",
@@ -28,7 +29,7 @@ my constant %longname = do {
 my $store := ($*HOME // $*TMPDIR).add(".zef").add("store");
 
 class Ecosystem {
-    has IO::Path $.IO;
+    has IO::Path $.IO      is built(:bind);
     has Str $.meta-url;
     has Int $.stale-period is built(:bind) = 86400;
     has str $.ecosystem is built(False);

@@ -2,6 +2,7 @@ Revision history for Ecosystem
 
 {{$NEXT}}
     - Update dependencies to keep in sync
+    - Limit Identity::Utils imports to the ones actually needed
     - Update copyright year
 
 0.0.28  2024-12-11T14:47:26+01:00

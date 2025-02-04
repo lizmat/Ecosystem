@@ -1,4 +1,5 @@
 .precomp/
 /Ecosystem-Archive-*
 /releases/
+*.rakucov
 1
