@@ -1,6 +1,8 @@
 Revision history for Ecosystem
 
 {{$NEXT}}
+
+0.0.31  2025-02-05T18:42:02+01:00
     - Bump dependency on Identity::Utils for "latest-successors"
     - Add ":latest" flag to .find-identities
 
