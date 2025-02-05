@@ -1,6 +1,8 @@
 Revision history for Ecosystem
 
 {{$NEXT}}
+    - Bump dependency on Identity::Utils for "latest-successors"
+    - Add ":latest" flag to .find-identities
 
 0.0.30  2025-02-05T13:58:56+01:00
     - Fix problem with find-identities not selecting the most

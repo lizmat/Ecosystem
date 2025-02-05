@@ -1,6 +1,8 @@
 use JSON::Fast::Hyper:ver<0.0.9+>:auth<zef:lizmat>;
-use Identity::Utils:ver<0.0.18+>:auth<zef:lizmat>
-  <api auth build from short-name is-pinned ver version without-ver>;
+use Identity::Utils:ver<0.0.19+>:auth<zef:lizmat> <
+  api auth build from short-name is-pinned latest-successors
+  ver version without-ver
+>;
 use Rakudo::CORE::META:ver<0.0.9+>:auth<zef:lizmat>;
 use Map::Match:ver<0.0.8+>:auth<zef:lizmat>;
 
@@ -330,7 +332,7 @@ class Ecosystem {
     }
 
     method find-identities(Ecosystem:D:
-      Any:D $needle = "", :$ver, :$auth, :$api, :$from, :$all
+      Any:D $needle = "", :$ver, :$auth, :$api, :$from, :$all, :$latest
     ) {
         if filter($needle ~~ Regex || $needle
                     ?? self.matches{$needle}.map(*.Slip).unique
@@ -342,9 +344,13 @@ class Ecosystem {
             else {
                 my %without-ver;
                 %without-ver{without-ver($_)}.push($_) for @identities;
-                sort-identities %without-ver.values.map: -> @ids {
-                    sort-identities(@ids).head
-                }
+                my @sorted =
+                  sort-identities %without-ver.values.map: -> @ids {
+                      sort-identities(@ids).head
+                  }
+                $latest
+                  ?? latest-successors(@sorted)
+                  !! @sorted
             }
         }
     }

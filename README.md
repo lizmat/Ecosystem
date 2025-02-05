@@ -180,6 +180,8 @@ my $eco = Ecosystem.new;
 .say for $eco.find-identities: / Utils /, :ver<0.0.3+>, :auth<zef:lizmat>;
 
 .say for $eco.find-identities: :auth<zef:lizmat>, :all;
+
+.say for $eco.find-identities: :latest;
 ```
 
 The `find-identities` method returns identities (sorted by short-name, latest version first) that match the optional given string or regular expression, potentially filtered by `:ver`, `:auth`, `:api` and/or `:from` value.
@@ -187,6 +189,11 @@ The `find-identities` method returns identities (sorted by short-name, latest ve
 The specified string is looked up / regular expression is matched in the distribution names, the use-targets and the descriptions of the distributions.
 
 By default, only the identity with the highest `:ver` value will be returned: a `:all` flag can be specified to return **all** possible identities.
+
+The `:latest` flag can be specified to apply heuristics on the identities so that only the most recent version of a distribution across ecosystems and authorities will be returned. This will e.g. return only `AccountableBagHash:ver<0.0.6>:auth<zef:lizmat>` from a list with:
+
+    AccountableBagHash:ver<0.0.3>:auth<cpan:ELIZABETH>
+    AccountableBagHash:ver<0.0.6>:auth<zef:lizmat>
 
 find-no-tags
 ------------
