@@ -1,6 +1,6 @@
 use JSON::Fast::Hyper:ver<0.0.9+>:auth<zef:lizmat>;
 use Identity::Utils:ver<0.0.18+>:auth<zef:lizmat>
-  <api auth build from short-name is-pinned ver version>;
+  <api auth build from short-name is-pinned ver version without-ver>;
 use Rakudo::CORE::META:ver<0.0.9+>:auth<zef:lizmat>;
 use Map::Match:ver<0.0.8+>:auth<zef:lizmat>;
 
@@ -336,10 +336,16 @@ class Ecosystem {
                     ?? self.matches{$needle}.map(*.Slip).unique
                     !! %!identities.keys,
                   $ver, $auth, $api, $from) -> @identities {
-            my %seen;
-            sort-identities $all
-              ?? @identities
-              !! @identities.map: { $_ unless %seen{short-name($_)}++ }
+            if $all {
+                sort-identities @identities;
+            }
+            else {
+                my %without-ver;
+                %without-ver{without-ver($_)}.push($_) for @identities;
+                sort-identities %without-ver.values.map: -> @ids {
+                    sort-identities(@ids).head
+                }
+            }
         }
     }
 
