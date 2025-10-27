@@ -6,9 +6,9 @@
   "build-depends": [
   ],
   "depends": [
-    "JSON::Fast::Hyper:ver<0.0.9+>:auth<zef:lizmat>",
+    "JSON::Fast::Hyper:ver<0.0.10+>:auth<zef:lizmat>",
     "Rakudo::CORE::META:ver<0.0.9+>:auth<zef:lizmat>",
-    "Identity::Utils:ver<0.0.19+>:auth<zef:lizmat>",
+    "Identity::Utils:ver<0.0.28+>:auth<zef:lizmat>",
     "Map::Match:ver<0.0.8+>:auth<zef:lizmat>"
   ],
   "description": "Accessing a Raku Ecosystem",
