@@ -4,7 +4,7 @@ use Identity::Utils:ver<0.0.28+>:auth<zef:lizmat> <
   ver version without-ver
 >;
 use Rakudo::CORE::META:ver<0.0.12+>:auth<zef:lizmat>;
-use Map::Match:ver<0.0.9+>:auth<zef:lizmat>;
+use Map::Match:ver<0.0.10+>:auth<zef:lizmat>;
 
 my constant %meta-url = do {
     my %hash =
