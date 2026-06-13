@@ -1,6 +1,9 @@
 Revision history for Ecosystem
 
 {{$NEXT}}
+
+0.0.33  2026-06-13T20:51:54+02:00
+    - Move repo to Codeberg
     - Up dependencies
     - Update copyright year
 

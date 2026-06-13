@@ -24,7 +24,7 @@
   "raku": "6.d",
   "resources": [
   ],
-  "source-url": "https://github.com/lizmat/Ecosystem.git",
+  "source-url": "https://codeberg.org/lizmat/Ecosystem.git",
   "support": {
     "bugtracker": "https://codeberg.org/lizmat/Ecosystem/issues",
     "email": "liz@raku.rocks",
@@ -37,5 +37,5 @@
   ],
   "test-depends": [
   ],
-  "version": "0.0.32"
+  "version": "0.0.33"
 }
