@@ -1,6 +1,8 @@
 Revision history for Ecosystem
 
 {{$NEXT}}
+    - Up dependencies
+    - Update copyright year
 
 0.0.32  2025-10-27T15:38:57+01:00
     - Fix problem in testing, caused by "eigenstates" update

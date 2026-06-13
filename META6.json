@@ -5,22 +5,31 @@
   ],
   "build-depends": [
   ],
-  "depends": [
-    "JSON::Fast::Hyper:ver<0.0.10+>:auth<zef:lizmat>",
-    "Rakudo::CORE::META:ver<0.0.9+>:auth<zef:lizmat>",
-    "Identity::Utils:ver<0.0.28+>:auth<zef:lizmat>",
-    "Map::Match:ver<0.0.8+>:auth<zef:lizmat>"
-  ],
+  "depends": {
+    "runtime": {
+      "requires": [
+        "JSON::Fast::Hyper:ver<0.0.11+>:auth<zef:lizmat>",
+        "Rakudo::CORE::META:ver<0.0.12+>:auth<zef:lizmat>",
+        "Identity::Utils:ver<0.0.28+>:auth<zef:lizmat>",
+        "Map::Match:ver<0.0.9+>:auth<zef:lizmat>"
+      ]
+    }
+  },
   "description": "Accessing a Raku Ecosystem",
   "license": "Artistic-2.0",
   "name": "Ecosystem",
-  "perl": "6.d",
   "provides": {
     "Ecosystem": "lib/Ecosystem.rakumod"
   },
+  "raku": "6.d",
   "resources": [
   ],
   "source-url": "https://github.com/lizmat/Ecosystem.git",
+  "support": {
+    "bugtracker": "https://codeberg.org/lizmat/Ecosystem/issues",
+    "email": "liz@raku.rocks",
+    "source": "https://codeberg.org/lizmat/Ecosystem.git"
+  },
   "tags": [
     "ECOSYSTEM",
     "META",

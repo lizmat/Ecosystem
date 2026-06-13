@@ -7,14 +7,12 @@ Ecosystem - Accessing a Raku Ecosystem Storage
 =head1 SYNOPSIS
 
 =begin code :lang<raku>
-
 use Ecosystem;
 
 my $eco = Ecosystem.new;  # access the REA ecosystem
 
 say "Ecosystem has $eco.identities.elems() identities:";
 .say for $eco.identities.keys.sort;
-
 =end code
 
 =head1 DESCRIPTION
@@ -35,9 +33,7 @@ L<App::Ecosystems|https://raku.land/zef:lizmat/App::Ecosystems> distribution.
 =head2 ecosystem
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new(:ecosystem<fez>);
-
 =end code
 
 The C<ecosystem> named argument is string that indicates which ecosystem
@@ -55,9 +51,7 @@ must be specified.
 =head2 IO
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new(IO => "path".IO);
-
 =end code
 
 The C<IO> named argument specifies the path of the file that contains
@@ -67,9 +61,7 @@ to whatever can be determined from the other arguments.
 =head2 meta-url
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new(meta-url => "https://foo.bar/META.json");
-
 =end code
 
 The C<meta-url> named argument specifies the URL that should be used to
@@ -81,9 +73,7 @@ arguments B<must> also be specified to store the meta information in.
 =head2 stale-period
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new(stale-period => 3600);
-
 =end code
 
 The C<stale-period> named argument specifies the number of seconds
@@ -93,9 +83,7 @@ updating using the C<meta-url>.  Defaults to C<86400>, aka 1 day.
 =head2 longname
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new(longname => 'My very own ecosystem storage';
-
 =end code
 
 The long name with which the ecosystem is to be known.  Defaults to
@@ -106,10 +94,8 @@ sensible name for the 4 original ecosystems: p6c cpan fez rea.
 =head2 dependencies-from-meta
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 .say for $eco.dependencies-from-meta(from-json $io.slurp);
-
 =end code
 
 The C<dependencies-from-meta> class method returns the list of C<use-targets>
@@ -118,9 +104,7 @@ as specified in the C<depends> field of the given hash with meta information.
 =head2 sort-identities
 
 =begin code :lang<raku>
-
 .say for Ecosystem.sort-identities(@identities);
-
 =end code
 
 The C<sort-identities> class method sorts the given identities with
@@ -132,10 +116,8 @@ identity.
 =head2 authors
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 .say for $eco.authors{ / eigenstates / }
-
 =end code
 
 The C<authors> instance method returns a
@@ -146,10 +128,8 @@ identities each author was found in as the value.
 =head2 dependencies
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 .say for $eco.dependencies("Ecosystem");
-
 =end code
 
 The C<dependencies> instance method returns a sorted list of all
@@ -159,10 +139,8 @@ C<use-target> or C<distro-name>.
 =head2 distro-names
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 say "Found $eco.distro-names.elems() differently named distributions";
-
 =end code
 
 The C<distro-names> instance method returns a C<Map> keyed on distribution
@@ -172,10 +150,8 @@ name (sorted by short-name, latest version first).
 =head2 distros-of-use-target
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 .say for $eco.distros-of-use-target($target);
-
 =end code
 
 The C<distro-of-use-target> instance method the names of the distributions
@@ -184,10 +160,8 @@ that provide the given use target.
 =head2 ecosystem
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 say "The ecosystem is $_" with $eco.ecosystem;
-
 =end code
 
 The C<ecosystem> instance method returns the value (implicitely) specified
@@ -196,12 +170,10 @@ with the C<:ecosystem> named argument.
 =head2 find-distro-names
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 .say for $eco.find-distro-names: / JSON /;
 
 .say for $eco.find-distro-names: :auth<zef:lizmat>;
-
 =end code
 
 The C<find-distro-names> instance method returns the distribution names
@@ -211,14 +183,12 @@ filtered by a C<:ver>, C<:auth>, C<:api> and/or C<:from> value.
 =head2 find-identities
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 .say for $eco.find-identities: / Utils /, :ver<0.0.3+>, :auth<zef:lizmat>;
 
 .say for $eco.find-identities: :auth<zef:lizmat>, :all;
 
 .say for $eco.find-identities: :latest;
-
 =end code
 
 The C<find-identities> method returns identities (sorted by short-name,
@@ -247,14 +217,12 @@ AccountableBagHash:ver<0.0.6>:auth<zef:lizmat>
 =head2 find-no-tags
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 .say for $eco.find-no-tags;
 
 .say for $eco.find-no-tags: / zef /;
 
 .say for $eco.find-no-tags: / zef / :all;
-
 =end code
 
 The C<find-no-tags> method returns identities (sorted by short-name,
@@ -273,12 +241,10 @@ identities that do B<not> have tags.
 =head2 find-use-targets
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 .say for $eco.find-use-targets: / JSON /;
 
 .say for $eco.find-use-targets: :auth<zef:lizmat>;
-
 =end code
 
 The C<find-use-targets> instance method returns the strings that can be
@@ -289,11 +255,9 @@ C<:from> value.
 =head2 identities
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 my %identities := $eco.identities;
 say "Found %identities.elems() identities";
-
 =end code
 
 The C<identities> instance method returns a C<Map> keyed on identity string,
@@ -302,12 +266,10 @@ with a C<Map> of the META information of that identity as the value.
 =head2 identity-dependencies
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 .say for $eco.identity-dependencies($identity);
 
 .say for $eco.identity-dependencies($identity, :all);
-
 =end code
 
 The C<identity-dependencies> instance method returns a sorted list of the
@@ -318,10 +280,8 @@ recursively.
 =head2 identity-release-Date
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 say $eco.identity-release-Date($identity);
-
 =end code
 
 The C<identity-release-Date> instance method returns the C<Date> when the
@@ -332,10 +292,8 @@ information available.
 =head2 identity-release-yyyy-mm-dd
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 say $eco.identity-release-yyyy-mm-dd($identity);
-
 =end code
 
 The C<identity-release-yyyy-mm-dd> instance method returns a C<Str> in
@@ -346,10 +304,8 @@ there is no release date information available.
 =head2 identity-url
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 say $eco.identity-url($identity);
-
 =end code
 
 The C<identity-url> instance method returns the C<URL> of the distribution
@@ -358,10 +314,8 @@ file associated with the given identity string, or C<Nil>.
 =head2 IO
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new(:IO("foobar.json").IO);
 say $eco.IO;  # "foobar.json".IO
-
 =end code
 
 The C<IO> instance method returns the C<IO::Path> object of the file where
@@ -370,10 +324,8 @@ the local copy of the META data lives.
 =head2 least-recent-release
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 say $eco.least-recent-release;
-
 =end code
 
 The C<least-recent-release> instancemethod returns the C<Date> of the
@@ -382,10 +334,8 @@ least recent release in the ecosystem, if any.
 =head2 longname
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 say $eco.longname;  # Raku Ecosystem Archive
-
 =end code
 
 Return the long name of the ecosystem.
@@ -393,10 +343,8 @@ Return the long name of the ecosystem.
 =head2 matches
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 .say for $eco.matches{ / Utils / }
-
 =end code
 
 The C<matches> instance method returns a
@@ -410,10 +358,8 @@ method.
 =head2 meta
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 say $eco.meta;  # ...
-
 =end code
 
 The C<meta> instance method returns the JSON representation of the
@@ -422,10 +368,8 @@ META data.
 =head2 meta-url
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new(:ecosystem<fez>);
 say $eco.meta-url;  # https://360.zef.pm/
-
 =end code
 
 The C<meta-url> instance method returns the URL that is used to
@@ -434,10 +378,8 @@ fetch the META data, if any.
 =head2 most-recent-release
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 say $eco.most-recent-release;
-
 =end code
 
 The C<most-recent-release> instance method returns the C<Date>
@@ -446,10 +388,8 @@ of the most recent release in the ecosystem, if any.
 =head2 resolve
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 say $eco.resolve("eigenstates");  # eigenstates:ver<0.0.9>:auth<zef:lizmat>
-
 =end code
 
 The C<resolve> instance method attempts to resolve the given string and the
@@ -459,11 +399,9 @@ identity that would be assumed when specified with e.g. C<dependencies>.
 =head2 reverse-dependencies
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 my %reverse-dependencies := $eco.reverse-dependencies;
 say "Found %reverse-dependencies.elems() reverse dependencies";
-
 =end code
 
 The C<reverse-dependencies> instance method returns a C<Map> keyed on
@@ -472,10 +410,8 @@ resolved dependencies, with a list of identities that depend on it.
 =head2 reverse-dependencies-for-short-name
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 .say for $eco.reverse-dependencies-for-short-name("File::Temp");
-
 =end code
 
 The C<reverse-dependencies-for-short-name> instance method returns
@@ -485,11 +421,9 @@ version of the given short-name.
 =head2 river
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 say "Top five modules on the Raku Ecosystem River:";
 .say for $eco.river.sort(-*.value.elems).map(*.key).head(5);
-
 =end code
 
 The C<river> instance method returns a C<Map> keyed on short-name of an
@@ -500,10 +434,8 @@ specification.
 =head2 stale-period
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 say $eco.stale-period;  # 86400
-
 =end code
 
 The C<stale-period> instance method returns the number of seconds
@@ -513,10 +445,8 @@ be stale.
 =head2 release-dates
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 .say for $eco.release-dates{ / ^2024 / }
-
 =end code
 
 The C<release-dates> instance method returns a
@@ -528,10 +458,8 @@ value.
 =head2 tags
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 .say for $eco.tags{ / eigenstates / }
-
 =end code
 
 The C<tags> instance method returns a
@@ -542,10 +470,8 @@ identities each tag was found in as the value.
 =head2 update
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 $eco.update;
-
 =end code
 
 The C<update> instance method re-fetches the META information from
@@ -555,10 +481,8 @@ manner.
 =head2 unresolvable-dependencies
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 say "Found $eco.unresolvable-dependencies.elems() unresolvable dependencies";
-
 =end code
 
 The C<unresolvable-dependencies> instance method returns a C<Map>
@@ -571,10 +495,8 @@ also have the non-current identities listed.
 =head2 unversioned-distros
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 say "Found $eco.unversioned-distro-names.elems() unversioned distributions";
-
 =end code
 
 The C<unversioned-distro-names> instance method returns a sorted list of
@@ -584,10 +506,8 @@ release with a valid C<:ver> value (typically B<:ver<*>>).
 =head2 use-targets
 
 =begin code :lang<raku>
-
 my $eco = Ecosystem.new;
 say "Found $eco.use-targets.elems() different 'use' targets";
-
 =end code
 
 The C<use-targets> instance method returns a C<Map> keyed on 'use'
@@ -598,7 +518,7 @@ target, with a sorted list of the identities that provide that
 
 Elizabeth Mattijsen <liz@raku.rocks>
 
-Source can be located at: https://github.com/lizmat/Ecosystem .
+Source can be located at: https://codeberg.org/lizmat/Ecosystem .
 Comments and Pull Requests are welcome.
 
 If you like this module, or what I’m doing more generally, committing to a
@@ -607,7 +527,7 @@ deal to me!
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2022, 2024, 2025 Elizabeth Mattijsen
+Copyright 2022, 2024, 2025, 2026 Elizabeth Mattijsen
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 
